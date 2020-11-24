@@ -15,8 +15,9 @@
         <param field="Mode3" label="IV" width="240px" required="true" default=""/>
         <param field="Mode6" label="Debug" width="100px">
             <options>
-                <option label="True" value="Debug"/>
-                <option label="False" value="Normal"  default="true" />
+                <option label="All" value="All"/>
+                <option label="Communication" value="Comm" />
+                <option label="None" value="None" default="true" />
             </options>
         </param>
     </params>
@@ -59,7 +60,7 @@ class BasePlugin:
         return plain[:16]+cipher.encrypt(plain[16:])
 
     def onStart(self):
-        if Parameters["Mode6"] != "Normal":
+        if Parameters["Mode6"] == "All":
             Domoticz.Debugging(1)
             DumpConfigToLog()
         self.key=unhexlify(Parameters["Mode2"])
@@ -74,14 +75,12 @@ class BasePlugin:
 
     def onConnect(self, Connection, Status, Description):
         if (Status == 0):
-            Domoticz.Debug("Connected successfully to: "+Connection.Address+":"+Connection.Port)
+            LogMessage("Connected successfully to: "+Connection.Address+":"+Connection.Port)
         else:
-            Domoticz.Debug("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
-        LogMessage("Connection: "+str(Connection))
+            Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
         self.httpServerConns[Connection.Name] = Connection
 
     def onMessage(self, Connection, Data):
-        LogMessage("onMessage called for connection: "+Connection.Address+":"+Connection.Port)
         header = ReadHeader(Data, True)
         if header.idD2L != Parameters["Mode1"]:
             Domoticz.Error("Wrong D2L ID (received {}, configured {}). If you have multiple D2L, add 2 differents hardware".format(header.idD2L, Parameters["Mode1"]))
@@ -101,12 +100,12 @@ class BasePlugin:
         if header.isResponse:
             Domoticz.Log("Should be a request")
         if not header.isSuccess:
-            Domoticz.Error("Not a success")
-        Domoticz.Log(str(header.payloadType)+" "+str(header.payloadSize)+" "+str(header.isRequest)+" "+str(header.isSuccess))
+            Domoticz.Error("D2L returns that last command/resquest was not a success")
         if header.payloadType == self.TYPE_COMMANDE_V3_PUSH_JSON:
             payload = Data[38:38+header.payloadSize]
             js = Data[38:38+header.payloadSize].decode("utf-8")
-            Domoticz.Log(js)
+            if Parameters["Mode6"] == "Comm" or Parameters["Mode6"] == "All":
+                 Domoticz.Log(js)
             data = json.loads(js)
             if data["_TYPE_TRAME"] == 'HISTORIQUE':
                 if data["OPTARIF"] == "HC..":
@@ -150,9 +149,9 @@ class BasePlugin:
                     self.lastHP=hp
                     self.lastUpdateHP=datetime.now()
                 else:
-                    Domoticz.Log("Unsupported OPTARIF: "+data["OPTARIF"])
+                    Domoticz.Error("Unsupported OPTARIF: "+data["OPTARIF"])
             elif data["_TYPE_TRAME"] == 'STANDARD':
-                Domoticz.Log("Standard mode is unsupported")
+                Domoticz.Error("Standard mode is unsupported")
         elif header.payloadType == self.TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE:
             Domoticz.Error("D2L module need a firmware update. Reset it, wait 5 min, connect it on eesmart server, wait for at least an hour, reset it and connect it back to domoticz server.")
             return
@@ -163,19 +162,12 @@ class BasePlugin:
         resp = GenerateHorlogeResponse(header)
         resp = self.cipher(resp)
         Connection.Send(resp)
-        #Connection.Disconnect()
 
     def onDisconnect(self, Connection):
-        LogMessage("onDisconnect called for connection '"+Connection.Name+"'.")
-        LogMessage("Server Connections:")
-        for x in self.httpServerConns:
-            LogMessage("--> "+str(x)+"'.")
+        #LogMessage("onDisconnect called for connection '" + Connection.Name + "'.")
         if Connection.Name in self.httpServerConns:
+            LogMessage("deleting connection '" + Connection.Name + "'.")
             del self.httpServerConns[Connection.Name]
-
-#    def onHeartbeat(self):
-#        pass
-
 
 
 def ReadHeader(Data, onlyUncrypted = False):
@@ -357,38 +349,24 @@ def onDisconnect(Connection):
     global _plugin
     _plugin.onDisconnect(Connection)
 
-#def onHeartbeat():
-#    global _plugin
-#    _plugin.onHeartbeat()
-
 # Generic helper functions
 def LogMessage(Message):
-    if Parameters["Mode6"] == "Normal":
-        Domoticz.Log(Message)
-    elif Parameters["Mode6"] == "Debug":
+    if Parameters["Mode6"] == "None" or Parameters["Mode6"] == "Comm":
+        Domoticz.Debug(Message)
+    else:
         Domoticz.Log(Message)
 
 def DumpConfigToLog():
     for x in Parameters:
         if Parameters[x] != "":
-            Domoticz.Log( "'" + x + "':'" + str(Parameters[x]) + "'")
-    Domoticz.Debug("Device count: " + str(len(Devices)))
+            LogMessage( "'" + x + "':'" + str(Parameters[x]) + "'")
+    LogMessage("Device count: " + str(len(Devices)))
     for x in Devices:
-        Domoticz.Debug("Device:           " + str(x) + " - " + str(Devices[x]))
-        Domoticz.Debug("Device ID:       '" + str(Devices[x].ID) + "'")
-        Domoticz.Debug("Device Name:     '" + Devices[x].Name + "'")
-        Domoticz.Debug("Device nValue:    " + str(Devices[x].nValue))
-        Domoticz.Debug("Device sValue:   '" + Devices[x].sValue + "'")
-        Domoticz.Debug("Device LastLevel: " + str(Devices[x].LastLevel))
+        LogMessage("Device:           " + str(x) + " - " + str(Devices[x]))
+        LogMessage("Device ID:       '" + str(Devices[x].ID) + "'")
+        LogMessage("Device Name:     '" + Devices[x].Name + "'")
+        LogMessage("Device nValue:    " + str(Devices[x].nValue))
+        LogMessage("Device sValue:   '" + Devices[x].sValue + "'")
+        LogMessage("Device LastLevel: " + str(Devices[x].LastLevel))
     return
 
-def DumpHTTPResponseToLog(httpDict):
-    if isinstance(httpDict, dict):
-        Domoticz.Log("HTTP Details ("+str(len(httpDict))+"):")
-        for x in httpDict:
-            if isinstance(httpDict[x], dict):
-                Domoticz.Log("--->'"+x+" ("+str(len(httpDict[x]))+"):")
-                for y in httpDict[x]:
-                    Domoticz.Log("------->'" + y + "':'" + str(httpDict[x][y]) + "'")
-            else:
-                Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
