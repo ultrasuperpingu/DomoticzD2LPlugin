@@ -106,6 +106,7 @@ class BasePlugin:
             js = Data[38:38+header.payloadSize].decode("utf-8")
             if Parameters["Mode6"] == "Comm" or Parameters["Mode6"] == "All":
                  Domoticz.Log(js)
+                 Domoticz.Log(str(GetHorloge()))
             data = json.loads(js)
             if data["_TYPE_TRAME"] == 'HISTORIQUE':
                 if data["OPTARIF"] == "HC..":
@@ -135,6 +136,7 @@ class BasePlugin:
                     self.lastHC=hc
                     self.lastUpdateHC=datetime.now()
                     UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHC+instantHP))+";"+str(hc+hp))
+                    UpdateDevice(Name="Smart", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
                 elif data["OPTARIF"] == "BASE":
                     hp=int(data["BASE"])
                     intervalHP=0
@@ -308,7 +310,8 @@ def GetHorloge():
 NameToUnit = {
   "HP":1,
   "HC":2,
-  "Total":3
+  "Total":3,
+  "Smart":4
 }
 
 def CreateDeviceIfNeeded(Name):
@@ -320,7 +323,10 @@ def CreateDeviceIfNeeded(Name):
     if i in Devices:
         dev=Devices[i]
     else:
-        dev=Domoticz.Device(Name=Name, Unit=i, TypeName="kWh")
+        if i != 4:
+            dev=Domoticz.Device(Name=Name, Unit=i, TypeName="kWh")
+        else:
+            dev=Domoticz.Device(Name=Name, Unit=i, Type=250, Subtype=1)
         dev.Create()
     return dev
 
