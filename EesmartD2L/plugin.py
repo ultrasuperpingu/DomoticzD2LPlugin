@@ -106,9 +106,19 @@ class BasePlugin:
             js = Data[38:38+header.payloadSize].decode("utf-8")
             if Parameters["Mode6"] == "Comm" or Parameters["Mode6"] == "All":
                  Domoticz.Log(js)
-                 Domoticz.Log(str(GetHorloge()))
             data = json.loads(js)
             if data["_TYPE_TRAME"] == 'HISTORIQUE':
+                iinst1=int(data["IINST1"])
+                iinst2=int(data["IINST2"])
+                iinst3=int(data["IINST3"])
+                isousc=int(data["ISOUSC"])
+                if iinst2 > 0 or iinst3 > 0:
+                    UpdateDevice("Intensité Instantanée 3 phases", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
+                    UpdateDevice("Charge Electrique", 0, str(round((iinst1+iinst2+iinst3)/3/isousc*100)))
+                else:
+                    UpdateDevice("Intensité Instantanée", 0, str(iinst1))
+                    UpdateDevice("Charge Electrique", 0, str(round(iinst1/isousc*100)))
+
                 if data["OPTARIF"] == "HC..":
                     hp=int(data["HCHP"])
                     intervalHP=0
@@ -311,7 +321,10 @@ NameToUnit = {
   "HP":1,
   "HC":2,
   "Total":3,
-  "Smart":4
+  "Smart":4,
+  "Intensité Instantanée":5,
+  "Intensité Instantanée 3 phases":6,
+  "Charge Electrique":7
 }
 
 def CreateDeviceIfNeeded(Name):
@@ -323,10 +336,19 @@ def CreateDeviceIfNeeded(Name):
     if i in Devices:
         dev=Devices[i]
     else:
-        if i != 4:
+        if i < 4:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="kWh")
-        else:
+        elif i == 4:
             dev=Domoticz.Device(Name=Name, Unit=i, Type=250, Subtype=1)
+        elif i == 5:
+            dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Current (Single)")
+        elif i == 6:
+            dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Current/Ampere")
+        elif i == 7:
+            dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Percentage")
+        else:
+            Domoticz.Error("Device unknown")
+            return None
         dev.Create()
     return dev
 
