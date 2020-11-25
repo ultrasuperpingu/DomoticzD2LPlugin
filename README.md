@@ -12,6 +12,8 @@ Requis : Testé uniquement sur Domoticz version 2020.2
 * Lancer la commande: ```git clone https://github.com/ultrasuperpingu/DomoticzD2LPlugin.git```
 * Redémarrer le service Domoticz en lancant la commande ```sudo service domoticz restart```
 
+Vous pouvez aussi simplement copier le fichier plugin.py dans le répertoire domoticz/plugins/{NomDeRepertoireDeNotreChoix} et redémarrer domoticz
+
 ## Mise à Jour
 
 Pour mettre à jour le plugin :
@@ -20,8 +22,9 @@ Pour mettre à jour le plugin :
 * Lancer la commande: ```git pull```
 * Redémarrer le service Domoticz en lancant la commande ```sudo service domoticz restart```
 
-## Configuration
+Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire domoticz/plugins/{NomDeRepertoireDeNotreChoix} et redémarrer domoticz
 
+## Configuration
 | Field | Information|
 | ----- | ---------- |
 | Port  | Le port à utiliser |
