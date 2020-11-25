@@ -27,7 +27,7 @@ Pour mettre à jour le plugin :
 | Port  | Le port à utiliser |
 | App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module |
 | IV | Le vecteur d'initialiation AES correspondant à votre module nécessaire au déchiffrement des trames du module |
-| Debug | All/Communication/None. Communication permet de ne logguer que les données envoyées par le module |
+| Debug | All/Communication/None. Communication permet de ne loguer que les données envoyées par le module |
 
 Dans la partie Matériel de Domoticz:
 
