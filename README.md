@@ -22,13 +22,13 @@ Pour mettre à jour le plugin :
 * Lancer la commande: ```git pull```
 * Redémarrer le service Domoticz en lancant la commande ```sudo service domoticz restart```
 
-Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire domoticz/plugins/{NomDeRepertoireDeNotreChoix} et redémarrer domoticz
+Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire domoticz/plugins/{NomDeRepertoireDeVotreChoix} et redémarrer domoticz
 
 ## Configuration
 | Field | Information|
 | ----- | ---------- |
 | Port  | Le port à utiliser |
-| D2L ID  | Numéro du module (il est inscrit sur une étiquette collé sur le module)  |
+| D2L ID  | Numéro du module (il est inscrit sur une étiquette collée sur le module)  |
 | App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module |
 | IV | Le vecteur d'initialiation AES correspondant à votre module nécessaire au déchiffrement des trames du module |
 | Debug | All/Communication/None. Communication permet de ne loguer que les données envoyées par le module |
