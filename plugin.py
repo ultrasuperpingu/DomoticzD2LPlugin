@@ -31,8 +31,9 @@ from datetime import datetime, timezone
 import secrets
 import json
 
+# Si DEBUG_FRAME_ENABLED==True, la trame reçu est remplacée par le contenu de DEBUG_FRAME. Faire attention que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
 DEBUG_FRAME_ENABLED=False
-DEBUG_FRAME='{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000000", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"000000000000", "OPTARIF":"BBR2", "ISOUSC":"30", "IMAX":"090", "BASE":"", "HCHC":"000000000", "HCHP":"000000000", "BBRHCJB":"000000000", "BBRHCJR":"000000000", "BBRHCJW":"000000000", "BBRHPJB":"000000000", "BBRHPJR":"000000000", "BBRHPJW":"000000000", "EJPHN":"000000000", "EJPHPM":"000000000", "_HORLOGE":"000000000", "PTEC":"HPJR", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"1", "IINST2":"0", "IINST3":"0" }'
+DEBUG_FRAME='{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000000", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"000000000000", "OPTARIF":"BASE", "ISOUSC":"30", "IMAX":"090", "BASE":"000000000", "HCHC":"000000000", "HCHP":"000000000", "BBRHCJB":"000000000", "BBRHCJR":"000000000", "BBRHCJW":"000000000", "BBRHPJB":"000000000", "BBRHPJR":"000000000", "BBRHPJW":"000000000", "EJPHN":"000000000", "EJPHPM":"000000000", "_HORLOGE":"000000000", "PTEC":"HPJR", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"1", "IINST2":"0", "IINST3":"0" }'
 
 class BasePlugin:
     enabled = False
@@ -152,7 +153,7 @@ class BasePlugin:
                     self.lastHC=hc
                     self.lastUpdateHC=datetime.now()
                     UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHC+instantHP))+";"+str(hc+hp))
-                    UpdateDevice(Name="Smart", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
+                    UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
                 elif data["OPTARIF"] == "BASE":
                     hp=int(data["BASE"])
                     intervalHP=0
@@ -324,13 +325,13 @@ def GetHorloge():
 
 
 NameToUnit = {
-  "HP":1,
-  "HC":2,
-  "Total":3,
-  "Smart":4,
-  "Intensité Instantanée":5,
-  "Intensité Instantanée 3 phases":6,
-  "Charge Electrique":7
+  "Intensité Instantanée":1,
+  "Intensité Instantanée 3 phases":2,
+  "Charge Electrique":3,
+  "HP/HC":4,
+  "Total":5,
+  "HP":16,
+  "HC":17
 }
 
 def CreateDeviceIfNeeded(Name):
@@ -344,15 +345,15 @@ def CreateDeviceIfNeeded(Name):
     if i in Devices:
         dev=Devices[i]
     else:
-        if i%100 < 4:
+        if i%100 > 4:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="kWh")
         elif i%100 == 4:
             dev=Domoticz.Device(Name=Name, Unit=i, Type=250, Subtype=1)
-        elif i%100 == 5:
+        elif i%100 == 1:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Current (Single)")
-        elif i%100 == 6:
+        elif i%100 == 2:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Current/Ampere")
-        elif i%100 == 7:
+        elif i%100 == 3:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Percentage")
         else:
             Domoticz.Error("Device unknown")
