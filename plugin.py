@@ -31,6 +31,9 @@ from datetime import datetime, timezone
 import secrets
 import json
 
+DEBUG_FRAME_ENABLED=False
+DEBUG_FRAME='{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000000", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"000000000000", "OPTARIF":"BBR2", "ISOUSC":"30", "IMAX":"090", "BASE":"", "HCHC":"000000000", "HCHP":"000000000", "BBRHCJB":"000000000", "BBRHCJR":"000000000", "BBRHCJW":"000000000", "BBRHPJB":"000000000", "BBRHPJR":"000000000", "BBRHPJW":"000000000", "EJPHN":"000000000", "EJPHPM":"000000000", "_HORLOGE":"000000000", "PTEC":"HPJR", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"1", "IINST2":"0", "IINST3":"0" }'
+
 class BasePlugin:
     enabled = False
     httpServerConn = None
@@ -103,7 +106,10 @@ class BasePlugin:
             Domoticz.Error("D2L returns that last command/resquest was not a success")
         if header.payloadType == self.TYPE_COMMANDE_V3_PUSH_JSON:
             payload = Data[38:38+header.payloadSize]
-            js = Data[38:38+header.payloadSize].decode("utf-8")
+            if DEBUG_FRAME_ENABLED:
+                js = DEBUG_FRAME
+            else:
+                js = Data[38:38+header.payloadSize].decode("utf-8")
             if Parameters["Mode6"] == "Comm" or Parameters["Mode6"] == "All":
                  Domoticz.Log(js)
             data = json.loads(js)
@@ -332,19 +338,21 @@ def CreateDeviceIfNeeded(Name):
         Domoticz.Error("Device name not defined")
         return None
     i=NameToUnit[Name]
-
+    if DEBUG_FRAME_ENABLED:
+        i+= 100
+        Name+=" - Debug"
     if i in Devices:
         dev=Devices[i]
     else:
-        if i < 4:
+        if i%100 < 4:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="kWh")
-        elif i == 4:
+        elif i%100 == 4:
             dev=Domoticz.Device(Name=Name, Unit=i, Type=250, Subtype=1)
-        elif i == 5:
+        elif i%100 == 5:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Current (Single)")
-        elif i == 6:
+        elif i%100 == 6:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Current/Ampere")
-        elif i == 7:
+        elif i%100 == 7:
             dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Percentage")
         else:
             Domoticz.Error("Device unknown")
