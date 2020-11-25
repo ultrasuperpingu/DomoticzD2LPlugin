@@ -39,4 +39,10 @@ Les champs App Key, IV et Port ne peuvent être modifié dynamiquement (en séle
 
 Du coté du module, suivez la procédure de la documentation du module pour le faire pointer vers le serveur domoticz et vers le port que vous avez configuré dans le plugin.
 
-Dès que le plugin recevera les premières infos, il créera les équipements nécessaires (un unique compteur kWh si contrat base et 3 compteurs kWh HP/HC/Total si contrat HC). 
+Dès que le plugin recevera les premières infos, il créera les équipements nécessaires :
+ * Intensité instantanée
+ * Charge électrique
+ * En fonction du contrat :
+   - un unique compteur kWh si contrat BASE
+   - 3 compteurs kWh HP/HC/Total (seront probablement supprimés dans les prochaines versions) + 1 compteur de type P1 Smart Sensor si contrat HC
+
