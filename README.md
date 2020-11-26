@@ -3,10 +3,10 @@ Domoticz Plugin For Eesmart D2L Module For Linky
 
 This plugin allow to get information from the french electricity meter Linky in Domoticz.
 
-Ce plugin permet la remontée des informations TIC de Linky vers Domoticz via le module D2L de Eesmart. Pour le moment, le module ne fonctionne qu'en mode historique pour des contrats Base et HP/HC.
+Ce plugin permet la remontée des informations TIC de Linky vers Domoticz via le module D2L de Eesmart, connecté localement au serveur Domoticz. Pour le moment, le module ne fonctionne qu'en mode historique pour des contrats Base et HP/HC.
 
 ## Installation
-Requis : Testé uniquement sur Domoticz version 2020.2
+Requis : Testé uniquement sur Domoticz version 2020.2, Python 3 doit être installé
 
 * En ligne de commande aller dans le répertoire plugin de Domoticz (domoticz/plugins)
 * Lancer la commande: ```git clone https://github.com/ultrasuperpingu/DomoticzD2LPlugin.git```
@@ -30,7 +30,7 @@ Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire d
 | Port  | Le port à utiliser |
 | D2L ID  | Numéro du module (il est inscrit sur une étiquette collée sur le module)  |
 | App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module |
-| IV | Le vecteur d'initialiation AES correspondant à votre module nécessaire au déchiffrement des trames du module |
+| IV | (Lire iv comme initialisation vector et non 4) Le vecteur d'initialiation AES correspondant à votre module nécessaire au déchiffrement des trames du module |
 | Debug | All/Communication/None. Communication permet de ne loguer que les données envoyées par le module |
 
 Dans la partie Matériel de Domoticz:
@@ -43,6 +43,7 @@ Les champs App Key, IV et Port ne peuvent être modifié dynamiquement (en séle
 
 Du coté du module, suivez la procédure de la documentation du module pour le faire pointer vers le serveur domoticz et vers le port que vous avez configuré dans le plugin.
 
+## Utilisation
 Dès que le plugin recevera les premières infos, il créera les équipements nécessaires :
  * Intensité instantanée
  * Charge électrique
