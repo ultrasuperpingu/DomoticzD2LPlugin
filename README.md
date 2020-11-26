@@ -28,10 +28,10 @@ Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire d
 | Field | Information|
 | ----- | ---------- |
 | Port  | Le port à utiliser |
-| D2L ID  | Numéro du module (il est inscrit sur une étiquette collée sur le module)  |
-| App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module |
-| IV | (Lire iv comme initialisation vector et non 4) Le vecteur d'initialiation AES correspondant à votre module nécessaire au déchiffrement des trames du module |
-| Debug | All/Communication/None. Communication permet de ne loguer que les données envoyées par le module |
+| D2L ID  | Numéro du module (il est inscrit sur une étiquette collée sur le module). Ce numéro fait 12 caractères. Si le numéro fournit en fait moins, ajoutez des 0 avant. |
+| App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimale). |
+| IV | (Lire iv comme initialisation vector et non 4) Le vecteur d'initialiation AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimale). |
+| Debug | All/Communication/None. Communication permet de ne loguer que les données envoyées par le module. |
 
 Dans la partie Matériel de Domoticz:
 
