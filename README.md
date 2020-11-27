@@ -18,7 +18,7 @@ Vous pouvez aussi simplement copier le fichier plugin.py dans le répertoire dom
 
 Pour mettre à jour le plugin :
 
-* En ligne de commande aller dans le répertoire plugin de Domoticz (domoticz/plugins)
+* En ligne de commande, aller dans le répertoire plugin de Domoticz (domoticz/plugins)
 * Lancer la commande: ```git pull```
 * Redémarrer le service Domoticz en lancant la commande ```sudo service domoticz restart```
 
