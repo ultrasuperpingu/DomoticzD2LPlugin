@@ -174,7 +174,7 @@ class BasePlugin:
         elif header.payloadType == self.TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE:
             Domoticz.Error("D2L module need a firmware update. Reset it, wait 5 min, connect it on eesmart server, wait for at least an hour, reset it and connect it back to domoticz server.")
             return
-        elif header.payloadType == self.self.TYPE_COMMANDE_V3_GET_HORLOGE:
+        elif header.payloadType == self.TYPE_COMMANDE_V3_GET_HORLOGE:
             pass
         else:
             Domoticz.Error("Unknown payload type: "+header.payloadType+". payload="+str(Data[38:38+header.payloadSize]))
