@@ -7,7 +7,35 @@
 # Creates and listens on an HTTP socket. Update devices when message received from D2L
 #
 """
-<plugin key="D2LModule" name="Eesmart D2L ERL Module" author="ultrapingu" version="1.0.0">
+<plugin key="D2LModule" name="Eesmart D2L ERL Module" author="ultrapingu" version="1.1.0">
+    <description>
+        <h2>Eesmart D2L ERL Module</h2><br/>
+        <h3>Paramètres</h3>
+        <ul style="list-style-type:square">
+            <li>Port: Port IP à configurer dans le module (l'adresse IP étant celle du serveur Domoticz)</li>
+            <li>D2L ID: Numéro du module (il est inscrit sur une étiquette collée sur le module). Ce numéro fait 12 caractères. Si le numéro fournit en fait moins, ajoutez des 0 avant</li>
+            <li>App Key: La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal)</li>
+            <li>IV: Le vecteur d'initialisation (initialization) AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal)</li>
+            <li>Debug: All/Communication/None. Communication permet de ne loguer que les données envoyées par le module</li>
+        </ul>
+        <h3>Dispositifs créés</h3>
+        <ul style="list-style-type:square">
+            <li>Intensité instantanée: Monophasé: une intensité (IINST), Triphasé: 3 intensités combiné en un dispositif (IINST1, IINST2, IINST3)</li>
+            <li>Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou (IINST1+IINST2+IINST3)/(3*ISOUSC)</li>
+            <li>En fonction du contrat :</li>
+            <ul>
+                <li>Contrat BASE :</li>
+                <ul>
+                    <li>Total : compteur kWh</li>
+                </ul>
+                <li>Contrat HC.. :</li>
+                <ul>
+                    <li>HP, HC, Total (seront probablement supprimés dans les prochaines versions) : compteur kWh</li>
+                    <li>HP/HC: de type P1 Smart Sensor contenant les toutes les infos des 3 autres compteurs</li>
+                </ul>
+            </ul>
+        </ul>
+    </description>
     <params>
         <param field="Port" label="Port" width="30px" required="true" default="8008"/>
         <param field="Mode1" label="D2L ID" width="90px" required="true" default=""/>
@@ -33,7 +61,7 @@ import json
 
 # Si DEBUG_FRAME_ENABLED==True, la trame reçu est remplacée par le contenu de DEBUG_FRAME. Faire attention que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
 DEBUG_FRAME_ENABLED=False
-DEBUG_FRAME='{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000000", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"000000000000", "OPTARIF":"BASE", "ISOUSC":"30", "IMAX":"090", "BASE":"000000000", "HCHC":"000000000", "HCHP":"000000000", "BBRHCJB":"000000000", "BBRHCJR":"000000000", "BBRHCJW":"000000000", "BBRHPJB":"000000000", "BBRHPJR":"000000000", "BBRHPJW":"000000000", "EJPHN":"000000000", "EJPHPM":"000000000", "_HORLOGE":"000000000", "PTEC":"HPJR", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"1", "IINST2":"0", "IINST3":"0" }'
+DEBUG_FRAME='{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000000", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"000000000000", "OPTARIF":"HC..", "ISOUSC":"30", "IMAX":"090", "BASE":"000000000", "HCHC":"000000000", "HCHP":"000000000", "BBRHCJB":"000000000", "BBRHCJR":"000000000", "BBRHCJW":"000000000", "BBRHPJB":"000000000", "BBRHPJR":"000000000", "BBRHPJW":"000000000", "EJPHN":"000000000", "EJPHPM":"000000000", "_HORLOGE":"000000000", "PTEC":"HPJR", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"1", "IINST2":"2", "IINST3":"0" }'
 
 class BasePlugin:
     enabled = False
@@ -76,7 +104,6 @@ class BasePlugin:
         self.httpServerConn.Listen()
 
 
-
     def onConnect(self, Connection, Status, Description):
         if (Status == 0):
             LogMessage("Connected successfully to: "+Connection.Address+":"+Connection.Port)
@@ -86,11 +113,12 @@ class BasePlugin:
 
     def onMessage(self, Connection, Data):
         header = ReadHeader(Data, True)
+        #Est-ce qu'un test du numéro du D2L est nécessaire, ça fait un paramètre plugin en plus (et donc source d'erreur) pour une utilisé contestable
         if header.idD2L != Parameters["Mode1"]:
             Domoticz.Error("Wrong D2L ID (received {}, configured {}). If you have multiple D2L, add 2 differents hardware".format(header.idD2L, Parameters["Mode1"]))
             return
         if header.frameSize != len(Data):
-            Domoticz.Error("Wrong size")
+            Domoticz.Error("Wrong frame size (expected: {}, received: {})".format(header.frameSize, len(Data)))
             return
         if header.protocolVersion != 3:
             Domoticz.Log("Protocol version is not 3. Errors may occurs.")
@@ -103,7 +131,7 @@ class BasePlugin:
             return
         if header.isResponse:
             Domoticz.Log("Should be a request")
-        if not header.isSuccess:
+        if header.isError:
             Domoticz.Error("D2L returns that last command/resquest was not a success")
         if header.payloadType == self.TYPE_COMMANDE_V3_PUSH_JSON:
             payload = Data[38:38+header.payloadSize]
@@ -219,18 +247,14 @@ def ReadHeader(Data, onlyUncrypted = False):
 
     # Requete (valeur 0) ou Reponse (valeur 1)
     if ((int.from_bytes(Data[36:37], byteorder='little',signed=False) & 0x80) == 0x80):
-        data.isRequest = False
         data.isResponse = True
     else:
-        data.isRequest = True
         data.isResponse = False
 
     # Réussie (valeur 0), Erreur (valeur 1)
     if (int.from_bytes(Data[37:38], byteorder='little',signed=False) & 0x80 == 0x80):
-        data.isSuccess = False
         data.isError = True
     else:
-        data.isSuccess = True
         data.isError = False
 
     return data
@@ -323,41 +347,32 @@ def GenerateHorlogeResponse(header):
 def GetHorloge():
     return int((datetime.now(timezone.utc)-datetime(2016, 1, 1, tzinfo=timezone.utc)).total_seconds())
 
-
+# Name -> (Unit, Type, Subtype)
 NameToUnit = {
-  "Intensité Instantanée":1,
-  "Intensité Instantanée 3 phases":2,
-  "Charge Electrique":3,
-  "HP/HC":4,
-  "Total":5,
-  "HP":16,
-  "HC":17
+  "Intensité Instantanée": (1, 243, 23),
+  "Intensité Instantanée 3 phases":(2, 89, 1),
+  "Charge Electrique":(3, 243, 6),
+  "HP/HC":(4, 250, 1),
+  "Total":(5, 243, 29),
+  "HP":(16, 243, 29),
+  "HC":(17, 243, 29)
 }
 
 def CreateDeviceIfNeeded(Name):
     if not Name in NameToUnit:
         Domoticz.Error("Device name not defined")
         return None
-    i=NameToUnit[Name]
+    i=NameToUnit[Name][0]
     if DEBUG_FRAME_ENABLED:
         i+= 100
-        Name+=" - Debug"
     if i in Devices:
         dev=Devices[i]
     else:
-        if i%100 > 4:
-            dev=Domoticz.Device(Name=Name, Unit=i, TypeName="kWh")
-        elif i%100 == 4:
-            dev=Domoticz.Device(Name=Name, Unit=i, Type=250, Subtype=1)
-        elif i%100 == 1:
-            dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Current (Single)")
-        elif i%100 == 2:
-            dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Current/Ampere")
-        elif i%100 == 3:
-            dev=Domoticz.Device(Name=Name, Unit=i, TypeName="Percentage")
+        if DEBUG_FRAME_ENABLED:
+            DName=Name+" - Debug"
         else:
-            Domoticz.Error("Device unknown")
-            return None
+            DName=Name
+        dev=Domoticz.Device(Name=DName, Unit=i, Type=NameToUnit[Name][1], Subtype=NameToUnit[Name][2])
         dev.Create()
     return dev
 
