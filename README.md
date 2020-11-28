@@ -45,9 +45,9 @@ Du coté du module, suivez la procédure de la documentation du module pour le f
 
 ## Utilisation
 Dès que le plugin recevera les premières infos, il créera les équipements nécessaires :
- * Intensité instantanée (Monophasé: une intensité, Triphasé: 3 intensités combiné en un dispositif)
- * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC)
+ * Intensité instantanée: Monophasé: une intensité (IINST), Triphasé: 3 intensités combiné en un dispositif (IINST1, IINST2, IINST3)</li>
+ * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou (IINST1+IINST2+IINST3)/(3*ISOUSC)
  * En fonction du contrat :
-   - un unique compteur kWh si contrat BASE
-   - 3 compteurs kWh HP/HC/Total (seront probablement supprimés dans les prochaines versions) + 1 compteur de type P1 Smart Sensor si contrat HC
+   - Contrat Base : un compteur kWh
+   - Contrat HP/HC : 1 compteur de type P1 Smart Sensor regroupant les compteurs HP et HC
 
