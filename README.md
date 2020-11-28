@@ -27,11 +27,11 @@ Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire d
 ## Configuration
 | Field | Information|
 | ----- | ---------- |
-| Port  | Le port à utiliser |
-| D2L ID  | Numéro du module (il est inscrit sur une étiquette collée sur le module). Ce numéro fait 12 caractères. Si le numéro fournit en fait moins, ajoutez des 0 avant. |
-| App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal). |
-| IV | (Lire iv comme initialisation vector et non 4) Le vecteur d'initialiation AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal). |
-| Debug | All/Communication/None. Communication permet de ne loguer que les données envoyées par le module. |
+| Port  | Port IP à configurer dans le module (l'adresse IP étant celle du serveur Domoticz) |
+| D2L ID  | Numéro du module (il est inscrit sur une étiquette collée sur le module). Ce numéro fait 12 caractères. Si le numéro fournit en fait moins, ajoutez des 0 avant |
+| App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal) |
+| IV | (Lire i.v. et non 4) Le vecteur d'initialisation (Initialization Vector) AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal) |
+| Debug | All/Communication/None. Communication permet de ne loguer que les données envoyées par le module |
 
 Dans la partie Matériel de Domoticz:
 
@@ -45,8 +45,8 @@ Du coté du module, suivez la procédure de la documentation du module pour le f
 
 ## Utilisation
 Dès que le plugin recevera les premières infos, il créera les équipements nécessaires :
- * Intensité instantanée
- * Charge électrique
+ * Intensité instantanée (Monophasé: une intensité, Triphasé: 3 intensités combiné en un dispositif)
+ * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC)
  * En fonction du contrat :
    - un unique compteur kWh si contrat BASE
    - 3 compteurs kWh HP/HC/Total (seront probablement supprimés dans les prochaines versions) + 1 compteur de type P1 Smart Sensor si contrat HC
