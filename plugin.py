@@ -41,7 +41,7 @@
         <param field="Mode1" label="D2L ID" width="90px" required="true" default=""/>
         <param field="Mode2" label="App Key" width="240px" required="true" default=""/>
         <param field="Mode3" label="IV" width="240px" required="true" default=""/>
-        <param field="Mode6" label="Debug" width="100px">
+        <param field="Mode6" label="Debug" width="120px">
             <options>
                 <option label="All" value="All"/>
                 <option label="Communication" value="Comm" />
@@ -61,7 +61,7 @@ import json
 
 # Si DEBUG_FRAME_ENABLED==True, la trame reçu est remplacée par le contenu de DEBUG_FRAME. Faire attention que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
 DEBUG_FRAME_ENABLED=False
-DEBUG_FRAME='{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000000", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"000000000000", "OPTARIF":"HC..", "ISOUSC":"30", "IMAX":"090", "BASE":"000000000", "HCHC":"000000000", "HCHP":"000000000", "BBRHCJB":"000000000", "BBRHCJR":"000000000", "BBRHCJW":"000000000", "BBRHPJB":"000000000", "BBRHPJR":"000000000", "BBRHPJW":"000000000", "EJPHN":"000000000", "EJPHPM":"000000000", "_HORLOGE":"000000000", "PTEC":"HPJR", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"1", "IINST2":"2", "IINST3":"0" }'
+DEBUG_FRAME='{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000000", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"000000000000", "OPTARIF":"HC..", "ISOUSC":"30", "IMAX":"090", "BASE":"000000000", "HCHC":"000000000", "HCHP":"000000000", "BBRHCJB":"000000000", "BBRHCJR":"000000000", "BBRHCJW":"000000000", "BBRHPJB":"000000000", "BBRHPJR":"000000000", "BBRHPJW":"000000000", "EJPHN":"000000000", "EJPHPM":"000000000", "_HORLOGE":"000000000", "PTEC":"HPJR", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"1", "IINST2":"0", "IINST3":"0" }'
 
 class BasePlugin:
     enabled = False
@@ -159,12 +159,9 @@ class BasePlugin:
                     intervalHP=0
                     if self.lastUpdateHP != None:
                         intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
-                    else:
-                        CreateDeviceIfNeeded("HP")
                     instantHP=0
                     if intervalHP > 0:
                         instantHP = (hp-self.lastHP)/intervalHP*3600
-                        UpdateDevice(Name="HP", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
                     self.lastHP=hp
                     self.lastUpdateHP=datetime.now()
 
@@ -172,16 +169,13 @@ class BasePlugin:
                     intervalHC=0
                     if self.lastUpdateHC != None:
                         intervalHC = (datetime.now()-self.lastUpdateHC).total_seconds()
-                    else:
-                        CreateDeviceIfNeeded("HC")
                     instantHC=0
                     if intervalHC > 0:
                         instantHC = (hc-self.lastHC)/intervalHC*3600
-                        UpdateDevice(Name="HC", nValue=0, sValue=str(round(instantHC))+";"+str(hc))
+                    if intervalHC > 0 or intervalHP > 0:
+                        UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
                     self.lastHC=hc
                     self.lastUpdateHC=datetime.now()
-                    UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHC+instantHP))+";"+str(hc+hp))
-                    UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
                 elif data["OPTARIF"] == "BASE":
                     hp=int(data["BASE"])
                     intervalHP=0
@@ -354,8 +348,6 @@ NameToUnit = {
   "Charge Electrique":(3, 243, 6),
   "HP/HC":(4, 250, 1),
   "Total":(5, 243, 29),
-  "HP":(16, 243, 29),
-  "HC":(17, 243, 29)
 }
 
 def CreateDeviceIfNeeded(Name):
