@@ -48,6 +48,6 @@ Dès que le plugin recevera les premières infos, il créera les équipements n�
  * Intensité instantanée: Monophasé: une intensité (IINST), Triphasé: 3 intensités combinées en un dispositif (IINST1, IINST2, IINST3)</li>
  * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou (IINST1+IINST2+IINST3)/(3*ISOUSC))
  * En fonction du contrat :
-   - Contrat Base : un compteur kWh
-   - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC
+   - Contrat Base : un compteur kWh (BASE)
+   - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC (HCHP et HCHC)
 
