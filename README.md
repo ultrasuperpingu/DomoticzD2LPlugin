@@ -49,5 +49,5 @@ Dès que le plugin recevera les premières infos, il créera les équipements n�
  * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou (IINST1+IINST2+IINST3)/(3*ISOUSC)
  * En fonction du contrat :
    - Contrat Base : un compteur kWh
-   - Contrat HP/HC : 1 compteur de type P1 Smart Sensor regroupant les compteurs HP et HC
+   - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC
 
