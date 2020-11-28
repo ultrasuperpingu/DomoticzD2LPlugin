@@ -44,7 +44,7 @@ Les champs App Key, IV et Port ne peuvent être modifié dynamiquement (en séle
 Du coté du module, suivez la procédure de la documentation du module pour le faire pointer vers le serveur domoticz et vers le port que vous avez configuré dans le plugin.
 
 ## Utilisation
-Dès que le plugin recevera les premières infos, il créera les équipements nécessaires :
+Dès que le plugin recevera les premières infos, il créera les équipements nécessaires (les termes en majuscules désignent les champs TIC (voir la spécification Enedis)) :
  * Intensité instantanée: Monophasé: une intensité (IINST), Triphasé: 3 intensités combinées en un dispositif (IINST1, IINST2, IINST3)</li>
  * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou (IINST1+IINST2+IINST3)/(3*ISOUSC))
  * En fonction du contrat :
