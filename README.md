@@ -52,3 +52,15 @@ Dès que le plugin recevera les premières infos, il créera les équipements n�
    - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC (HCHP et HCHC)
    
 Spécification Enedis : https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf
+
+## Remonter un problème
+Si le plugin ne fonctionne pas, activez le mode Debug dans les paramètres (Debug = All ou Communication). Si vous passez le module en Debug=All, l'ensemble des informations ne seront disponibles qu'après un redémarrage de Domoticz. Vous devriez alors avoir plus d'informations.
+Si un messsage d'erreur apparait :
+<ul>
+ <li>soit c'est un message envoyé par le plugin, et il devrait vous donner la raison du problème</li>
+ <li>soit il s'agit d'une erreur Python, dans ce cas, ouvrez un bug en renseignant ce message</li>
+</ul>
+Si vous ouvrez un bug, il serait préférable d'envoyer, s'il est visible dans les logs, la trame JSON envoyées par le module (pensez à l'anonymiser en remplaçant notamment les chiffres du champ ADCO).
+
+Si aucun message n'apparait et que vous ne voyez pas les trames JSON envoyées par le module dans les logs, c'est que le module n'est pas convenablement configuré ou qu'un problème réseau l'empêche de communiquer avec le serveur Domoticz.
+
