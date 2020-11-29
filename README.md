@@ -46,8 +46,9 @@ Du coté du module, suivez la procédure de la documentation du module pour le f
 ## Utilisation
 Dès que le plugin recevera les premières infos, il créera les équipements nécessaires (les termes en majuscules désignent les champs TIC (voir la spécification Enedis)) :
  * Intensité instantanée: Monophasé: une intensité (IINST), Triphasé: 3 intensités combinées en un dispositif (IINST1, IINST2, IINST3)</li>
- * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou (IINST1+IINST2+IINST3)/(3*ISOUSC))
+ * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC en monophasé ou (IINST1+IINST2+IINST3)/(3*ISOUSC) en triphasé)
  * En fonction du contrat :
    - Contrat Base : un compteur kWh (BASE)
    - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC (HCHP et HCHC)
-
+   
+Spécification Enedis : https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf
