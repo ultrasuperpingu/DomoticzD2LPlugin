@@ -60,7 +60,9 @@ Si un messsage d'erreur apparait :
  <li>soit c'est un message envoyé par le plugin, et il devrait vous donner la raison du problème</li>
  <li>soit il s'agit d'une erreur Python, dans ce cas, ouvrez un bug en renseignant ce message</li>
 </ul>
-Si vous ouvrez un bug, il serait préférable d'envoyer, s'il est visible dans les logs, la trame JSON envoyées par le module (pensez à l'anonymiser en remplaçant notamment les chiffres du champ ADCO).
+Si vous ouvrez un bug, il serait préférable d'envoyer, s'il est visible dans les logs, la trame JSON envoyées par le module. Pensez à l'anonymiser en remplaçant notamment les chiffres du champ ADCO, et tous les champs que vous trouverez sensible.
+
+Si votre type de contrat n'est pas pris en charge par le plugin (TEMPO ou EJP), je ne garanti pas de faire le développement mais vous pouvez m'envoyer un exemple de trame JSON via l'ouverture d'un bug (idem, pensez à l'anonymiser).
 
 Si aucun message n'apparait et que vous ne voyez pas les trames JSON envoyées par le module dans les logs, c'est que le module n'est pas convenablement configuré ou qu'un problème réseau l'empêche de communiquer avec le serveur Domoticz.
 
