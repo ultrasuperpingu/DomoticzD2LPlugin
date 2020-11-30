@@ -39,7 +39,7 @@ Dans la partie Matériel de Domoticz:
  * Renseigner les paramètres
  * Ajouter le matériel
  
-Les champs App Key, IV et Port ne peuvent être modifié dynamiquement (en sélectionnant le matériel et en faisant Modifier). Pour prendre en compte la modification, vous devez redémarrer Domoticz (```sudo service domoticz restart```).
+Les champs App Key, IV et Port ne peuvent être modifiés dynamiquement (en sélectionnant le matériel et en faisant Modifier). Pour prendre en compte la modification, vous devez redémarrer Domoticz (```sudo service domoticz restart```).
 
 Du coté du module, suivez la procédure de la documentation du module pour le faire pointer vers le serveur domoticz et vers le port que vous avez configuré dans le plugin.
 
@@ -60,7 +60,7 @@ Si un messsage d'erreur apparait :
  <li>soit c'est un message envoyé par le plugin, et il devrait vous donner la raison du problème</li>
  <li>soit il s'agit d'une erreur Python, dans ce cas, ouvrez un bug en renseignant ce message</li>
 </ul>
-Si vous ouvrez un bug, il serait préférable d'envoyer, s'il est visible dans les logs, la trame JSON envoyées par le module. Pensez à l'anonymiser en remplaçant notamment les chiffres du champ ADCO, et tous les champs que vous trouverez sensible.
+Si vous ouvrez un bug, il serait préférable d'envoyer, s'il est visible dans les logs, la trame JSON envoyée par le module. Pensez à l'anonymiser en remplaçant notamment les chiffres du champ ADCO, et tous les champs que vous trouverez sensibles.
 
 Si votre type de contrat n'est pas pris en charge par le plugin (TEMPO ou EJP), je ne garanti pas de faire le développement mais vous pouvez m'envoyer un exemple de trame JSON via l'ouverture d'un bug (idem, pensez à l'anonymiser).
 
