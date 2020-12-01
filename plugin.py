@@ -16,7 +16,7 @@
             <li>D2L ID: Numéro du module (il est inscrit sur une étiquette collée sur le module). Ce numéro fait 12 caractères. Si le numéro fournit en fait moins, ajoutez des 0 avant</li>
             <li>App Key: La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal)</li>
             <li>IV: Le vecteur d'initialisation (initialization) AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal)</li>
-            <li>Additional Numeric Fields: Des champs numériques du message json à ajouter en custom sensor. Les champs doivent être séparés par un ; et suffixé de @ suivi de l'unité du champs. Exemple: "ADIR1@A;HCHP@kWh"</li>
+            <li>Additional Numeric Fields: Des champs numériques du message json à ajouter en custom sensor. Les champs doivent être séparés par un ; et suffixé de @ suivi de l'unité du champ (si l'unité est TEXT, le champ sera de type textuel). Les sommes de champs sont gérées (il suffit de séparer les noms des champs par un +). Exemple: "ADIR1@A;HCHP@kWh;ADIR1+ADIR2+ADIR3@A;_ID_D2L@TEXT"</li>
             <li>Debug: All/Communication/None. Communication permet de ne loguer que les données envoyées par le module</li>
         </ul>
         <h3>Dispositifs créés</h3>
@@ -31,7 +31,6 @@
                 </ul>
                 <li>Contrat HC.. :</li>
                 <ul>
-                    <li>HP, HC, Total (seront probablement supprimés dans les prochaines versions) : compteur kWh</li>
                     <li>HP/HC: de type P1 Smart Sensor contenant les toutes les infos des 3 autres compteurs</li>
                 </ul>
             </ul>
@@ -453,7 +452,10 @@ def CreateAdditionalDeviceIfNeeded(Name, i, PhysicsUnit):
             DName=Name+" - Debug"
         else:
             DName=Name
-        dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Custom", Options={'Custom':'1;'+PhysicsUnit})
+        if PhysicsUnit == "TEXT":
+            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Text")
+        else: # TODO: gérer proprement kWh
+            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Custom", Options={'Custom':'1;'+PhysicsUnit})
         dev.Create()
     return dev
 
@@ -469,9 +471,16 @@ def UpdateAdditionalDevices(data):
             continue
         field = temp[0]
         unit = temp[1]
+        if unit == "TEXT":
+            if not field in data:
+                Domoticz.Error("Field " + field + " does not exists in json")
+                continue
         dev = CreateAdditionalDeviceIfNeeded(field, 20 + i, unit)
-        val = GetNumericValue(field, data)
-        dev.Update(0, str(val), Options={'Custom':'1;'+unit})
+        if unit == "TEXT":
+            dev.Update(0, data[field], Options={'Custom':'1;'+unit})
+        else: # TODO: gérer proprement kWh
+            val = GetNumericValue(field, data)
+            dev.Update(0, str(val), Options={'Custom':'1;'+unit})
         i += 1
 
 global _plugin
