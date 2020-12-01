@@ -58,6 +58,7 @@ import base64
 from datetime import datetime, timezone
 import secrets
 import json
+import re
 
 # Si DEBUG_FRAME_ENABLED==True, la trame reçu est remplacée par le contenu de DEBUG_FRAME. Faire attention que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
 DEBUG_FRAME_ENABLED=False
@@ -92,6 +93,8 @@ class BasePlugin:
         return plain[:16]+cipher.encrypt(plain[16:])
 
     def onStart(self):
+        if not re.match("^20[0-9][0-9]\\..+", Parameters["DomoticzVersion"]):
+            Domoticz.Error("Domoticz version must be 2020.1 or above (version: {}). Plugin has not been tested with older version and may not work.".format(Parameters["DomoticzVersion"]))
         if Parameters["Mode6"] == "All":
             Domoticz.Debugging(1)
             DumpConfigToLog()
