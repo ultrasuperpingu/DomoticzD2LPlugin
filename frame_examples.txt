@@ -1,4 +1,4 @@
 
-Mode historique, contrat HCHP :
+Mode historique, contrat HCHP (EDF) :
 { "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000123", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"012345678901", "OPTARIF":"HC..", "ISOUSC":"30", "IMAX":"090", "BASE":"", "HCHC":"012345678", "HCHP":"012345678", "BBRHCJB":"", "BBRHCJR":"", "BBRHCJW":"", "BBRHPJB":"", "BBRHPJR":"", "BBRHPJW":"", "EJPHN":"", "EJPHPM":"", "_HORLOGE":"154649324", "PTEC":"", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"2", "IINST2":"0", "IINST3":"0" }
 
