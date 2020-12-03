@@ -13,15 +13,25 @@
         <h3>Paramètres</h3>
         <ul style="list-style-type:square">
             <li>Port: Port IP à configurer dans le module (l'adresse IP étant celle du serveur Domoticz)</li>
-            <li>D2L ID: Numéro du module (il est inscrit sur une étiquette collée sur le module). Ce numéro fait 12 caractères. Si le numéro fournit en fait moins, ajoutez des 0 avant</li>
             <li>App Key: La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal)</li>
             <li>IV: Le vecteur d'initialisation (initialization) AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal)</li>
-            <li>Additional Numeric Fields: Des champs numériques du message json à ajouter en custom sensor. Les champs doivent être séparés par un ; et suffixé de @ suivi de l'unité du champ (si l'unité est TEXT, le champ sera de type textuel). Les sommes de champs sont gérées (il suffit de séparer les noms des champs par un +). Exemple: "ADIR1@A;HCHP@kWh;ADIR1+ADIR2+ADIR3@A;_ID_D2L@TEXT"</li>
+            <!--li>Standard Mode Config : Correspondance champs JSON signification pour le mode standard.<br/>
+                 En mode standard, il semble que la valeur des champs varie d'un fournisseur à un autre.
+                 Il est donc plus simple de proposer de configurer la signification des champs.<br/>
+                 Il faut indiquer 4 champs séparés par des ; avec dans l'ordre, les compteurs suivants :<br/>
+                 <pre>Conso Heures Pleines;Conso Heures Creuses;Prod Heures Pleines;Prod Heures Creuses</pre>
+                 Valeurs typiques:
+                 <ul>
+                     <li>EDF contrat BASE : "EASF01;;EAIT;</li>
+                     <li>EDF contrat HP/HC : "EASF02;EASF01;EAIT;</li>
+                 </ul>
+            </li-->
+            <li>Additional Fields: Des champs du message json à ajouter en custom sensor. Les champs doivent être séparés par un ; et suffixé de @ suivi de l'unité du champ (si l'unité est TEXT, le champ sera de type "Texte"). Les sommes de champs sont gérées (il suffit de séparer les noms des champs par un +). Exemple: "ADIR1@A;HCHP+HCHC@kWh;_ID_D2L@TEXT"</li>
             <li>Debug: All/Communication/None. Communication permet de ne loguer que les données envoyées par le module</li>
         </ul>
         <h3>Dispositifs créés</h3>
         <ul style="list-style-type:square">
-            <li>Intensité instantanée: Monophasé: une intensité (IINST), Triphasé: 3 intensités combiné en un dispositif (IINST1, IINST2, IINST3)</li>
+            <li>Intensité : Monophasé: une intensité (IINST), Triphasé: 3 intensités combiné en un dispositif (IINST1, IINST2, IINST3)</li>
             <li>Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou (IINST1+IINST2+IINST3)/(3*ISOUSC)</li>
             <li>En fonction du contrat :</li>
             <ul>
@@ -38,11 +48,11 @@
     </description>
     <params>
         <param field="Port" label="Port" width="30px" required="true" default="8008"/>
-        <param field="Mode1" label="D2L ID" width="90px" required="true" default=""/>
+        <!--param field="Mode1" label="D2L ID" width="90px" required="true" default=""/-->
         <param field="Mode2" label="App Key" width="240px" required="true" default=""/>
         <param field="Mode3" label="IV" width="240px" required="true" default=""/>
-        <!--param field="Mode4" label="Standard Mode Fields" width="240px" required="false" default="EASF02;EASF01+EASF03;EAIT;"/-->
-        <param field="Mode5" label="Additional Numeric Fields" width="240px" required="false" default=""/>
+        <!--param field="Mode4" label="Standard Mode Config" width="240px" required="false" default="EASF02;EASF01+EASF03;EAIT;"/-->
+        <param field="Mode5" label="Additional Fields" width="240px" required="false" default=""/>
         <param field="Mode6" label="Debug" width="120px">
             <options>
                 <option label="All" value="All"/>
@@ -61,10 +71,12 @@ from datetime import datetime, timezone
 import secrets
 import json
 import re
+import os
 
-# Si DEBUG_FRAME_ENABLED==True, la trame reçu est remplacée par le contenu de DEBUG_FRAME. Faire attention que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
+# Si DEBUG_FRAME_ENABLED==True, les trames du fichiers frame_examples.txt sont lues au démarrage du plugin (test regression). 
+# Les devices crés/mis à jour sont différents de ceux utilisé en prod afin de ne pas collecter des données de debug sur les dispositifs de prod dans la base domoticz.
+# Faire attention à ce que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
 DEBUG_FRAME_ENABLED=False
-DEBUG_FRAME='{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000000", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"000000000000", "OPTARIF":"HC..", "ISOUSC":"30", "IMAX":"090", "BASE":"000000000", "HCHC":"000000000", "HCHP":"000000000", "BBRHCJB":"000000000", "BBRHCJR":"000000000", "BBRHCJW":"000000000", "BBRHPJB":"000000000", "BBRHPJR":"000000000", "BBRHPJW":"000000000", "EJPHN":"000000000", "EJPHPM":"000000000", "_HORLOGE":"000000000", "PTEC":"HPJR", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"1", "IINST2":"0", "IINST3":"0" }'
 
 class BasePlugin:
     enabled = False
@@ -79,6 +91,7 @@ class BasePlugin:
     lastUpdateHC=None
     lastHP=0
     lastHC=0
+    lastIdD2L=None
     TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE = 0x1 #non documenté
     TYPE_COMMANDE_V3_PUSH_JSON = 0x3
     TYPE_COMMANDE_V3_GET_HORLOGE = 0x5
@@ -107,7 +120,17 @@ class BasePlugin:
 
         self.httpServerConn = Domoticz.Connection(Name="Server Connection", Transport="TCP/IP", Protocol="None", Port=Parameters["Port"])
         self.httpServerConn.Listen()
-
+        if DEBUG_FRAME_ENABLED:
+            savedConfigStandard = Parameters["Mode4"]
+            savedAdditionalFields = Parameters["Mode5"]
+            debugFrames=ReadDebugFramesFile()
+            for f in debugFrames:
+                Parameters["Mode4"] = f[1]
+                Parameters["Mode5"] = f[2]
+                data = json.loads(f[0])
+                self.processJson(data)
+            Parameters["Mode4"] = savedConfigStandard
+            Parameters["Mode5"] = savedAdditionalFields
 
     def onConnect(self, Connection, Status, Description):
         if (Status == 0):
@@ -118,13 +141,14 @@ class BasePlugin:
 
     def onMessage(self, Connection, Data):
         header = ReadHeader(Data, True)
-        #Est-ce qu'un test du numéro du D2L est nécessaire, ça fait un paramètre plugin en plus (et donc source d'erreur) pour une utilisé contestable
-        if header.idD2L != Parameters["Mode1"]:
-            Domoticz.Error("Wrong D2L ID (received {}, configured {}). If you have multiple D2L, add 2 differents hardware".format(header.idD2L, Parameters["Mode1"]))
+        if self.lastIdD2L != None and header.idD2L != self.lastIdD2L:
+            Domoticz.Error("Multiple D2L IDs detected (received {}, last received {}). If you have multiple D2L, add 2 hardwares with different ports".format(header.idD2L, self.lastIdD2L))
             return
+        self.lastIdD2L = header.idD2L
         if header.frameSize != len(Data):
             Domoticz.Error("Wrong frame size (expected: {}, received: {})".format(header.frameSize, len(Data)))
             return
+        LogMessage("Message received from module "+header.idD2L)
         if header.protocolVersion != 3:
             Domoticz.Log("Protocol version is not 3. Errors may occurs.")
         if header.encryptionMethod != 1:
@@ -140,114 +164,11 @@ class BasePlugin:
             Domoticz.Error("D2L returns that last command/resquest was not a success.")
         if header.payloadType == self.TYPE_COMMANDE_V3_PUSH_JSON:
             payload = Data[38:38+header.payloadSize]
-            if DEBUG_FRAME_ENABLED:
-                js = DEBUG_FRAME
-            else:
-                js = Data[38:38+header.payloadSize].decode("utf-8")
+            js = Data[38:38+header.payloadSize].decode("utf-8")
             if Parameters["Mode6"] == "Comm" or Parameters["Mode6"] == "All":
                  Domoticz.Log("JSON Frame received: "+js)
             data = json.loads(js)
-            if data["_TYPE_TRAME"] == 'HISTORIQUE':
-                iinst1=int(data["IINST1"])
-                iinst2=int(data["IINST2"])
-                iinst3=int(data["IINST3"])
-                isousc=int(data["ISOUSC"])
-                if iinst2 > 0 or iinst3 > 0:
-                    UpdateDevice("Intensité Instantanée 3 phases", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
-                    UpdateDevice("Charge Electrique", 0, str(round((iinst1+iinst2+iinst3)/3/isousc*100)))
-                else:
-                    UpdateDevice("Intensité Instantanée", 0, str(iinst1))
-                    UpdateDevice("Charge Electrique", 0, str(round(iinst1/isousc*100)))
-
-                if data["OPTARIF"] == "HC..":
-                    hp=int(data["HCHP"])
-                    intervalHP=0
-                    if self.lastUpdateHP != None:
-                        intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
-                    instantHP=0
-                    if intervalHP > 0:
-                        instantHP = (hp-self.lastHP)/intervalHP*3600
-                    self.lastHP=hp
-                    self.lastUpdateHP=datetime.now()
-
-                    hc=int(data["HCHC"])
-                    intervalHC=0
-                    if self.lastUpdateHC != None:
-                        intervalHC = (datetime.now()-self.lastUpdateHC).total_seconds()
-                    instantHC=0
-                    if intervalHC > 0:
-                        instantHC = (hc-self.lastHC)/intervalHC*3600
-                    if intervalHC > 0 or intervalHP > 0:
-                        UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
-                    self.lastHC=hc
-                    self.lastUpdateHC=datetime.now()
-                elif data["OPTARIF"] == "BASE":
-                    hp=int(data["BASE"])
-                    intervalHP=0
-                    if self.lastUpdateHP != None:
-                        intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
-                    else:
-                        CreateDeviceIfNeeded("Total")
-                    instantHP=0
-                    if intervalHP > 0:
-                        instantHP = (hp-self.lastHP)/intervalHP*3600
-                        UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
-                    self.lastHP=hp
-                    self.lastUpdateHP=datetime.now()
-                else:
-                    Domoticz.Error("Unsupported OPTARIF: "+data["OPTARIF"])
-            elif data["_TYPE_TRAME"] == 'STANDARD':
-                Domoticz.Error("Standard mode is not officialy supported, if it works, great!, if not, feel free to open an issue providing the json frame (don't forget to anonymize the frame).")
-                iinst1=int(data["IRMS1"])
-                iinst2=int(data["IRMS2"])
-                iinst3=int(data["IRMS3"])
-                isousc=int(data["PREF"])
-                pcoup=int(data["PCOUP"])
-                if iinst2 > 0 or iinst3 > 0:
-                    UpdateDevice("Intensité Instantanée 3 phases", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
-                    UpdateDevice("Charge Electrique", 0, str(round((iinst1+iinst2+iinst3)/3/isousc*100)))
-                else:
-                    UpdateDevice("Intensité Instantanée", 0, str(iinst1))
-                    UpdateDevice("Charge Electrique", 0, str(round(iinst1/isousc*100)))
-
-                if data["NGTF"] == "H PLEINE/CREUSE":
-                    hp=int(data["EASF01"])
-                    intervalHP=0
-                    if self.lastUpdateHP != None:
-                        intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
-                    instantHP=0
-                    if intervalHP > 0:
-                        instantHP = (hp-self.lastHP)/intervalHP*3600
-                    self.lastHP=hp
-                    self.lastUpdateHP=datetime.now()
-
-                    hc=int(data["EASF02"])
-                    intervalHC=0
-                    if self.lastUpdateHC != None:
-                        intervalHC = (datetime.now()-self.lastUpdateHC).total_seconds()
-                    instantHC=0
-                    if intervalHC > 0:
-                        instantHC = (hc-self.lastHC)/intervalHC*3600
-                    if intervalHC > 0 or intervalHP > 0:
-                        UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
-                    self.lastHC=hc
-                    self.lastUpdateHC=datetime.now()
-                elif data["NGTF"] == "BASE":
-                    hp=int(data["EASF01"])
-                    intervalHP=0
-                    if self.lastUpdateHP != None:
-                        intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
-                    else:
-                        CreateDeviceIfNeeded("Total")
-                    instantHP=0
-                    if intervalHP > 0:
-                        instantHP = (hp-self.lastHP)/intervalHP*3600
-                        UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
-                    self.lastHP=hp
-                    self.lastUpdateHP=datetime.now()
-                else:
-                    Domoticz.Error("Unsupported NGTF: "+data["NGTF"])
-            UpdateAdditionalDevices(data)
+            self.processJson(data)
         elif header.payloadType == self.TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE:
             Domoticz.Error("D2L module need a firmware update. Reset it, wait 5 min, connect it on eesmart server, wait for at least an hour, reset it and connect it back to domoticz server.")
             return
@@ -258,6 +179,114 @@ class BasePlugin:
         resp = GenerateHorlogeResponse(header)
         resp = self.cipher(resp)
         Connection.Send(resp)
+
+    def processJson(self, data):
+        if data["_TYPE_TRAME"] == 'HISTORIQUE':
+            iinst1=int(data["IINST1"])
+            iinst2=int(data["IINST2"])
+            iinst3=int(data["IINST3"])
+            isousc=int(data["ISOUSC"])
+            if iinst2 > 0 or iinst3 > 0:
+                UpdateDevice("Intensité (triphasé)", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
+                UpdateDevice("Charge Electrique", 0, str(round((iinst1+iinst2+iinst3)/3/isousc*100)))
+            else:
+                UpdateDevice("Intensité", 0, str(iinst1))
+                UpdateDevice("Charge Electrique", 0, str(round(iinst1/isousc*100)))
+
+            if data["OPTARIF"] == "HC..":
+                hp=int(data["HCHP"])
+                intervalHP=0
+                if self.lastUpdateHP != None:
+                    intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
+                instantHP=0
+                if intervalHP > 0:
+                    instantHP = (hp-self.lastHP)/intervalHP*3600
+                self.lastHP=hp
+                self.lastUpdateHP=datetime.now()
+
+                hc=int(data["HCHC"])
+                intervalHC=0
+                if self.lastUpdateHC != None:
+                    intervalHC = (datetime.now()-self.lastUpdateHC).total_seconds()
+                instantHC=0
+                if intervalHC > 0:
+                    instantHC = (hc-self.lastHC)/intervalHC*3600
+                if intervalHC > 0 or intervalHP > 0:
+                    UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
+                self.lastHC=hc
+                self.lastUpdateHC=datetime.now()
+            elif data["OPTARIF"] == "BASE":
+                hp=int(data["BASE"])
+                intervalHP=0
+                if self.lastUpdateHP != None:
+                    intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
+                else:
+                    CreateDeviceIfNeeded("Total")
+                instantHP=0
+                if intervalHP > 0:
+                    instantHP = (hp-self.lastHP)/intervalHP*3600
+                    UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
+                self.lastHP=hp
+                self.lastUpdateHP=datetime.now()
+            else:
+                Domoticz.Error("Unsupported OPTARIF: "+data["OPTARIF"])
+        elif data["_TYPE_TRAME"] == 'STANDARD':
+            Domoticz.Error("Standard mode is not officialy supported, if it works, great!, if not, feel free to open an issue providing the json frame (don't forget to anonymize the frame).")
+            iinst1=0
+            if "IRMS1" in data and data["IRMS1"].strip() != "":
+                iinst1=int(data["IRMS1"])
+            iinst2=0
+            if "IRMS2" in data and data["IRMS2"].strip() != "":
+                iinst2=int(data["IRMS2"])
+            iinst3=0
+            if "IRMS3" in data and data["IRMS3"].strip() != "":
+                iinst3=int(data["IRMS3"])
+            pref=int(data["PREF"])
+            pcoup=int(data["PCOUP"])
+            UpdateDevice("Charge Electrique", 0, str(pref/pcoup*100))
+            if iinst2 > 0 or iinst3 > 0:
+                UpdateDevice("Intensité (triphasé)", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
+            else:
+                UpdateDevice("Intensité", 0, str(iinst1))
+
+            if data["NGTF"] == "H PLEINE/CREUSE":
+                hp=int(data["EASF01"])
+                intervalHP=0
+                if self.lastUpdateHP != None:
+                    intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
+                instantHP=0
+                if intervalHP > 0:
+                    instantHP = (hp-self.lastHP)/intervalHP*3600
+                self.lastHP=hp
+                self.lastUpdateHP=datetime.now()
+
+                hc=int(data["EASF02"])
+                intervalHC=0
+                if self.lastUpdateHC != None:
+                    intervalHC = (datetime.now()-self.lastUpdateHC).total_seconds()
+                instantHC=0
+                if intervalHC > 0:
+                    instantHC = (hc-self.lastHC)/intervalHC*3600
+                if intervalHC > 0 or intervalHP > 0:
+                    UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
+                self.lastHC=hc
+                self.lastUpdateHC=datetime.now()
+            elif data["NGTF"] == "BASE":
+                hp=int(data["EASF01"])
+                intervalHP=0
+                if self.lastUpdateHP != None:
+                    intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
+                else:
+                    CreateDeviceIfNeeded("Total")
+                instantHP=0
+                if intervalHP > 0:
+                    instantHP = (hp-self.lastHP)/intervalHP*3600
+                    UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
+                self.lastHP=hp
+                self.lastUpdateHP=datetime.now()
+            else:
+                Domoticz.Error("Unsupported NGTF: "+data["NGTF"])
+        UpdateAdditionalDevices(data)
 
     def onDisconnect(self, Connection):
         #LogMessage("onDisconnect called for connection '" + Connection.Name + "'.")
@@ -369,7 +398,7 @@ def GenerateHorlogeResponse(header):
     buffer += 0x0.to_bytes(1, byteorder="little", signed=False)                      #1(1)  : unused
     #following value will be replace at the end of method
     buffer += 0x0.to_bytes(2, byteorder="little", signed=False)                      #2(2)  : frame size
-    buffer += int(Parameters["Mode1"]).to_bytes(8, byteorder="little", signed=False) #4(8)  : ID D2L
+    buffer += int(header.idD2L).to_bytes(8, byteorder="little", signed=False)        #4(8)  : ID D2L
     buffer += 0x1.to_bytes(1, byteorder="little", signed=False)                      #12(1) : encryption method (bit 0-2, always 1)
     buffer += 0x0.to_bytes(3, byteorder="little", signed=False)                      #13(3) : unused
     buffer += secrets.token_bytes(16)                                                #16(16): random number
@@ -398,8 +427,8 @@ def GetHorloge():
 
 # Name -> (Unit, Type, Subtype)
 NameToUnit = {
-  "Intensité Instantanée": (1, 243, 23),
-  "Intensité Instantanée 3 phases":(2, 89, 1),
+  "Intensité": (1, 243, 23),
+  "Intensité (triphasé)":(2, 89, 1),
   "Charge Electrique":(3, 243, 6),
   "HP/HC":(4, 250, 1),
   "Total":(5, 243, 29),
@@ -437,9 +466,9 @@ def GetNumericValue(fieldsStr, data):
             try:
                 val += float(data[f])
             except ValueError:
-                Domoticz.Error("Can't parse field "+f+" as numeric (value: "+data[f]+")")
+                Domoticz.Error("Can't parse field " + f + " as numeric (value: " + data[f] + ")")
         else:
-            Domoticz.Error("Field "+f+" does not exists in json")
+            Domoticz.Error("Field " + f + " does not exists in json")
     return val
 
 def CreateAdditionalDeviceIfNeeded(Name, i, PhysicsUnit):
@@ -455,7 +484,7 @@ def CreateAdditionalDeviceIfNeeded(Name, i, PhysicsUnit):
         if PhysicsUnit == "TEXT":
             dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Text")
         else: # TODO: gérer proprement kWh
-            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Custom", Options={'Custom':'1;'+PhysicsUnit})
+            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Custom", Options={'Custom':'1;' + PhysicsUnit})
         dev.Create()
     return dev
 
@@ -467,7 +496,7 @@ def UpdateAdditionalDevices(data):
             continue
         temp = fieldsAndUnit.split('@')
         if len(temp) != 2:
-            Domoticz.Error("Error parsing Additional Fields "+fieldsAndUnit)
+            Domoticz.Error("Error parsing Additional Fields " + fieldsAndUnit)
             continue
         field = temp[0]
         unit = temp[1]
@@ -477,10 +506,10 @@ def UpdateAdditionalDevices(data):
                 continue
         dev = CreateAdditionalDeviceIfNeeded(field, 20 + i, unit)
         if unit == "TEXT":
-            dev.Update(0, data[field], Options={'Custom':'1;'+unit})
+            dev.Update(0, data[field])
         else: # TODO: gérer proprement kWh
             val = GetNumericValue(field, data)
-            dev.Update(0, str(val), Options={'Custom':'1;'+unit})
+            dev.Update(0, str(val), Options={'Custom':'1;' + unit})
         i += 1
 
 global _plugin
@@ -503,6 +532,25 @@ def onDisconnect(Connection):
     _plugin.onDisconnect(Connection)
 
 # Generic helper functions
+def ReadDebugFramesFile():
+    frames = []
+    path = os.path.join(Parameters["HomeFolder"], "frame_examples.txt")
+    f = open(path,"r")
+    for l in f.readlines():
+        l = l.strip()
+        if len(l) == 0 or l[0] == '#':
+            continue
+        index = l.find("##")
+        if index < 0:
+            frames.append([l, "", ""])
+            continue
+        index2 = l.find("##", index+2)
+        if index2 < 0:
+            frames.append([l[:index], l[index+2:], ""])
+        else:
+            frames.append([l[:index], l[index+2:index2], l[index2+2:]])
+    return frames
+
 def LogMessage(Message):
     if Parameters["Mode6"] == "None" or Parameters["Mode6"] == "Comm":
         Domoticz.Debug(Message)

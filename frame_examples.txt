@@ -1,4 +1,20 @@
+## Ce fichier sert à la fois à donner des exemples des trames json reçues et de fichier d'entrée pour des tests de non regression.
+# Format : pour chaque ligne ne commençant pas par #, "{json envoyé}##{Config mode standard}##{Champs additionnels}"
+# la config mode standard et les champs additionnels peuvent être absents
 
-Mode historique, contrat HCHP (EDF) :
+#Mode historique, contrat BASE monophasé (EDF) (forgé à la main) :
+{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000123", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"012345678901", "OPTARIF":"BASE", "ISOUSC":"30", "IMAX":"090", "BASE":"012345678", "HCHC":"", "HCHP":"", "BBRHCJB":"", "BBRHCJR":"", "BBRHCJW":"", "BBRHPJB":"", "BBRHPJR":"", "BBRHPJW":"", "EJPHN":"", "EJPHPM":"", "_HORLOGE":"154649324", "PTEC":"", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"2", "IINST2":"0", "IINST3":"0" }
+#Mode historique, contrat HCHP monophasé (EDF) (anonymisé) :
 { "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000123", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"012345678901", "OPTARIF":"HC..", "ISOUSC":"30", "IMAX":"090", "BASE":"", "HCHC":"012345678", "HCHP":"012345678", "BBRHCJB":"", "BBRHCJR":"", "BBRHCJW":"", "BBRHPJB":"", "BBRHPJR":"", "BBRHPJW":"", "EJPHN":"", "EJPHPM":"", "_HORLOGE":"154649324", "PTEC":"", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"2", "IINST2":"0", "IINST3":"0" }
+#Mode historique, contrat BASE triphasé (EDF) (forgé à la main) :
+{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000123", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"012345678901", "OPTARIF":"BASE", "ISOUSC":"30", "IMAX":"090", "BASE":"012345678", "HCHC":"", "HCHP":"", "BBRHCJB":"", "BBRHCJR":"", "BBRHCJW":"", "BBRHPJB":"", "BBRHPJR":"", "BBRHPJW":"", "EJPHN":"", "EJPHPM":"", "_HORLOGE":"154649324", "PTEC":"", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"2", "IINST2":"4", "IINST3":"1" }
+#Mode historique, contrat HCHP triphasé (EDF) (forgé à la main) :
+{ "_TYPE_TRAME":"HISTORIQUE", "_ID_D2L":"000000000123", "_DATE_FIRMWARE":"Jul 7 2017", "ADCO":"012345678901", "OPTARIF":"HC..", "ISOUSC":"30", "IMAX":"090", "BASE":"", "HCHC":"012345678", "HCHP":"012345678", "BBRHCJB":"", "BBRHCJR":"", "BBRHCJW":"", "BBRHPJB":"", "BBRHPJR":"", "BBRHPJW":"", "EJPHN":"", "EJPHPM":"", "_HORLOGE":"154649324", "PTEC":"", "ADIR1":"", "ADIR2":"", "ADIR3":"", "IINST1":"2", "IINST2":"1", "IINST3":"3" }
+
+#Mode standard, contrat BASE monophasé (EDF) (forgé à la main) :
+{ "_TYPE_TRAME":"STANDARD", "_ID_D2L":"000000000123", "_DATE_FIRMWARE":"Jul 7 2017", "ADSC":"012345678901", "DATE":"H201225223518","NGTF":"BASE", "LTARF":"HC","EAST":"012345678", "EASF01":"012345678", "EASF02":"", "EASF03":"", "EASF04":"", "EASF05":"", "EASF06":"", "EASF07":"", "EASF08":"", "EASF09":"", "EASF10":"", "EASD01":"012345678", "EASD02":"", "EASD03":"", "EASD04":"", "EAIT":"012345678", "ERQ1":"", "ERQ2":"", "ERQ3":"", "ERQ4":"", "IRMS1":"2", "IRMS2":"", "IRMS3":"", "URMS1":"240", "URMS2":"", "URMS3":"", "PREF":"22", "PCOUP":"30", "SINSTS": "01234", "SINST1": "", "SINST2": "", "SINST3": "", "SMAXSN": "00022", "SMAXSN1": "", "SMAXSN2": "", "SMAXSN3": "", "SINSTI":"00045", "NTARF":"01" }##EASF01;;EAIT;
+
+
+## Tests champs additionnels
+{ "_TYPE_TRAME":"STANDARD", "_ID_D2L":"000000000123", "_DATE_FIRMWARE":"Jul 7 2017", "ADSC":"012345678901", "DATE":"H201225223518","NGTF":"BASE", "LTARF":"HC","EAST":"012345678", "EASF01":"012345678", "EASF02":"", "EASF03":"", "EASF04":"", "EASF05":"", "EASF06":"", "EASF07":"", "EASF08":"", "EASF09":"", "EASF10":"", "EASD01":"012345678", "EASD02":"", "EASD03":"", "EASD04":"", "EAIT":"012345678", "ERQ1":"", "ERQ2":"", "ERQ3":"", "ERQ4":"", "IRMS1":"2", "IRMS2":"", "IRMS3":"", "URMS1":"240", "URMS2":"", "URMS3":"", "PREF":"22", "PCOUP":"30", "SINSTS": "01234", "SINST1": "", "SINST2": "", "SINST3": "", "SMAXSN": "00022", "SMAXSN1": "", "SMAXSN2": "", "SMAXSN3": "", "SINSTI":"00045", "NTARF":"01" }##EASF01;;EAIT;##SINSTI+SINSTS@VA;SMAXSN@TEXT
 
