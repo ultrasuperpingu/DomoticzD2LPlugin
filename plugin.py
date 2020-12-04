@@ -92,6 +92,7 @@ class BasePlugin:
     lastHP=0
     lastHC=0
     lastIdD2L=None
+    incompleteMessage=None
     TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE = 0x1 #non documenté
     TYPE_COMMANDE_V3_PUSH_JSON = 0x3
     TYPE_COMMANDE_V3_GET_HORLOGE = 0x5
@@ -138,16 +139,24 @@ class BasePlugin:
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
         self.httpServerConns[Connection.Name] = Connection
+        self.incompleteMessage = None
 
     def onMessage(self, Connection, Data):
+        if self.incompleteMessage != None:
+            Data = self.incompleteMessage + Data;
         header = ReadHeader(Data, True)
+        if header.frameSize > len(Data): # Attendre que le message soit complet
+            self.incompleteMessage = Data
+            return
+        elif header.frameSize < len(Data):
+            Domoticz.Error("Wrong frame size (expected: {}, received: {})".format(header.frameSize, len(Data)))
+            return
+        else:
+            self.incompleteMessage = None
         if self.lastIdD2L != None and header.idD2L != self.lastIdD2L:
             Domoticz.Error("Multiple D2L IDs detected (received {}, last received {}). If you have multiple D2L, add 2 hardwares with different ports".format(header.idD2L, self.lastIdD2L))
             return
         self.lastIdD2L = header.idD2L
-        if header.frameSize != len(Data):
-            Domoticz.Error("Wrong frame size (expected: {}, received: {})".format(header.frameSize, len(Data)))
-            return
         LogMessage("Message received from module "+header.idD2L)
         if header.protocolVersion != 3:
             Domoticz.Log("Protocol version is not 3. Errors may occurs.")
@@ -231,7 +240,7 @@ class BasePlugin:
             else:
                 Domoticz.Error("Unsupported OPTARIF: "+data["OPTARIF"])
         elif data["_TYPE_TRAME"] == 'STANDARD':
-            Domoticz.Error("Standard mode is not officialy supported, if it works, great!, if not, feel free to open an issue providing the json frame (don't forget to anonymize the frame).")
+            #Domoticz.Error("Standard mode is not officialy supported, if it works, great!, if not, feel free to open an issue providing the json frame (don't forget to anonymize the frame).")
             iinst1=0
             if "IRMS1" in data and data["IRMS1"].strip() != "":
                 iinst1=int(data["IRMS1"])
@@ -241,16 +250,16 @@ class BasePlugin:
             iinst3=0
             if "IRMS3" in data and data["IRMS3"].strip() != "":
                 iinst3=int(data["IRMS3"])
-            pref=int(data["PREF"])
+            sinsts=int(data["SINSTS"])
             pcoup=int(data["PCOUP"])
-            UpdateDevice("Charge Electrique", 0, str(pref/pcoup*100))
+            UpdateDevice("Charge Electrique", 0, str(round(sinsts/10/pcoup, 1)))
             if iinst2 > 0 or iinst3 > 0:
                 UpdateDevice("Intensité (triphasé)", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
             else:
                 UpdateDevice("Intensité", 0, str(iinst1))
 
-            if data["NGTF"] == "H PLEINE/CREUSE":
-                hp=int(data["EASF01"])
+            if data["NGTF"].strip() == "H PLEINE/CREUSE":
+                hp=int(data["EASF02"])
                 intervalHP=0
                 if self.lastUpdateHP != None:
                     intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
@@ -260,7 +269,7 @@ class BasePlugin:
                 self.lastHP=hp
                 self.lastUpdateHP=datetime.now()
 
-                hc=int(data["EASF02"])
+                hc=int(data["EASF01"])
                 intervalHC=0
                 if self.lastUpdateHC != None:
                     intervalHC = (datetime.now()-self.lastUpdateHC).total_seconds()
@@ -271,7 +280,7 @@ class BasePlugin:
                     UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
                 self.lastHC=hc
                 self.lastUpdateHC=datetime.now()
-            elif data["NGTF"] == "BASE":
+            elif data["NGTF"].strip() == "BASE":
                 hp=int(data["EASF01"])
                 intervalHP=0
                 if self.lastUpdateHP != None:
