@@ -93,6 +93,7 @@ class BasePlugin:
     lastHC=0
     lastIdD2L=None
     incompleteMessage=None
+    triphase=False
     TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE = 0x1 #non documenté
     TYPE_COMMANDE_V3_PUSH_JSON = 0x3
     TYPE_COMMANDE_V3_GET_HORLOGE = 0x5
@@ -195,7 +196,8 @@ class BasePlugin:
             iinst2=int(data["IINST2"])
             iinst3=int(data["IINST3"])
             isousc=int(data["ISOUSC"])
-            if iinst2 > 0 or iinst3 > 0:
+            if self.triphase or iinst2 > 0 or iinst3 > 0:
+                self.triphase=True
                 UpdateDevice("Intensité (triphasé)", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
                 UpdateDevice("Charge Electrique", 0, str(round((iinst1+iinst2+iinst3)/3/isousc*100)))
             else:
