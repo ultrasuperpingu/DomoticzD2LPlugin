@@ -15,7 +15,7 @@
             <li>Port: Port IP à configurer dans le module (l'adresse IP étant celle du serveur Domoticz)</li>
             <li>App Key: La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal)</li>
             <li>IV: Le vecteur d'initialisation (initialization) AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal)</li>
-            <!--li>Standard Mode Config : Correspondance champs JSON signification pour le mode standard.<br/>
+            <li>Standard Mode Config : Correspondance champs JSON signification pour le mode standard.<br/>
                  En mode standard, il semble que la valeur des champs varie d'un fournisseur à un autre.
                  Il est donc plus simple de proposer de configurer la signification des champs.<br/>
                  Il faut indiquer 4 champs séparés par des ; avec dans l'ordre, les compteurs suivants :<br/>
@@ -25,7 +25,7 @@
                      <li>EDF contrat BASE : "EASF01;;EAIT;</li>
                      <li>EDF contrat HP/HC : "EASF02;EASF01;EAIT;</li>
                  </ul>
-            </li-->
+            </li>
             <li>Additional Fields: Des champs du message json à ajouter en custom sensor. Les champs doivent être séparés par un ; et suffixé de @ suivi de l'unité du champ (si l'unité est TEXT, le champ sera de type "Texte"). Les sommes de champs sont gérées (il suffit de séparer les noms des champs par un +). Exemple: "ADIR1@A;HCHP+HCHC@kWh;_ID_D2L@TEXT"</li>
             <li>Debug: All/Communication/None. Communication permet de ne loguer que les données envoyées par le module</li>
         </ul>
@@ -51,7 +51,7 @@
         <!--param field="Mode1" label="D2L ID" width="90px" required="true" default=""/-->
         <param field="Mode2" label="App Key" width="240px" required="true" default=""/>
         <param field="Mode3" label="IV" width="240px" required="true" default=""/>
-        <!--param field="Mode4" label="Standard Mode Config" width="240px" required="false" default="EASF02;EASF01+EASF03;EAIT;"/-->
+        <param field="Mode4" label="Standard Mode Config" width="240px" required="false" default="EASF02;EASF01+EASF03;EAIT;"/>
         <param field="Mode5" label="Additional Fields" width="240px" required="false" default=""/>
         <param field="Mode6" label="Debug" width="120px">
             <options>
@@ -82,18 +82,13 @@ class BasePlugin:
     enabled = False
     httpServerConn = None
     httpServerConns = {}
-    counterHP=None
-    counterHC=None
-    instantVA=None
     key=None
     IV=None
-    lastUpdateHP=None
-    lastUpdateHC=None
-    lastHP=0
-    lastHC=0
+    lastUpdate=None
     lastIdD2L=None
     incompleteMessage=None
     triphase=False
+    lastValues = None
     TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE = 0x1 #non documenté
     TYPE_COMMANDE_V3_PUSH_JSON = 0x3
     TYPE_COMMANDE_V3_GET_HORLOGE = 0x5
@@ -130,7 +125,9 @@ class BasePlugin:
                 Parameters["Mode4"] = f[1]
                 Parameters["Mode5"] = f[2]
                 data = json.loads(f[0])
+                self.lastValues = None
                 self.processJson(data)
+                self.processJson(data) #second time to really update device 
             Parameters["Mode4"] = savedConfigStandard
             Parameters["Mode5"] = savedAdditionalFields
 
@@ -206,43 +203,27 @@ class BasePlugin:
 
             if data["OPTARIF"] == "HC..":
                 hp=int(data["HCHP"])
-                intervalHP=0
-                if self.lastUpdateHP != None:
-                    intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
-                instantHP=0
-                if intervalHP > 0:
-                    instantHP = (hp-self.lastHP)/intervalHP*3600
-                self.lastHP=hp
-                self.lastUpdateHP=datetime.now()
-
                 hc=int(data["HCHC"])
-                intervalHC=0
-                if self.lastUpdateHC != None:
-                    intervalHC = (datetime.now()-self.lastUpdateHC).total_seconds()
-                instantHC=0
-                if intervalHC > 0:
-                    instantHC = (hc-self.lastHC)/intervalHC*3600
-                if intervalHC > 0 or intervalHP > 0:
+                instantHP = None
+                instantHC = None
+                if self.lastValues != None:
+                    instantHP = self.computeInstant(self.lastValues[0], hp)
+                    instantHC = self.computeInstant(self.lastValues[1], hp)
                     UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
-                self.lastHC=hc
-                self.lastUpdateHC=datetime.now()
+                self.lastValues = [hp, hc]
             elif data["OPTARIF"] == "BASE":
                 hp=int(data["BASE"])
-                intervalHP=0
-                if self.lastUpdateHP != None:
-                    intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
+                instantHP = None
+                if self.lastValues != None:
+                    instantHP = self.computeInstant(self.lastValues[0], hp)
+                    UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
                 else:
                     CreateDeviceIfNeeded("Total")
-                instantHP=0
-                if intervalHP > 0:
-                    instantHP = (hp-self.lastHP)/intervalHP*3600
-                    UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
-                self.lastHP=hp
-                self.lastUpdateHP=datetime.now()
+                self.lastValues = [hp]
             else:
                 Domoticz.Error("Unsupported OPTARIF: "+data["OPTARIF"])
+            self.lastUpdate=datetime.now()
         elif data["_TYPE_TRAME"] == 'STANDARD':
-            #Domoticz.Error("Standard mode is not officialy supported, if it works, great!, if not, feel free to open an issue providing the json frame (don't forget to anonymize the frame).")
             iinst1=0
             if "IRMS1" in data and data["IRMS1"].strip() != "":
                 iinst1=int(data["IRMS1"])
@@ -255,49 +236,64 @@ class BasePlugin:
             sinsts=int(data["SINSTS"])
             pcoup=int(data["PCOUP"])
             UpdateDevice("Charge Electrique", 0, str(round(sinsts/10/pcoup, 1)))
-            if iinst2 > 0 or iinst3 > 0:
+            if self.triphase or iinst2 > 0 or iinst3 > 0:
                 UpdateDevice("Intensité (triphasé)", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
             else:
                 UpdateDevice("Intensité", 0, str(iinst1))
-
-            if data["NGTF"].strip() == "H PLEINE/CREUSE":
-                hp=int(data["EASF02"])
-                intervalHP=0
-                if self.lastUpdateHP != None:
-                    intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
-                instantHP=0
-                if intervalHP > 0:
-                    instantHP = (hp-self.lastHP)/intervalHP*3600
-                self.lastHP=hp
-                self.lastUpdateHP=datetime.now()
-
-                hc=int(data["EASF01"])
-                intervalHC=0
-                if self.lastUpdateHC != None:
-                    intervalHC = (datetime.now()-self.lastUpdateHC).total_seconds()
-                instantHC=0
-                if intervalHC > 0:
-                    instantHC = (hc-self.lastHC)/intervalHC*3600
-                if intervalHC > 0 or intervalHP > 0:
-                    UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
-                self.lastHC=hc
-                self.lastUpdateHC=datetime.now()
-            elif data["NGTF"].strip() == "BASE":
-                hp=int(data["EASF01"])
-                intervalHP=0
-                if self.lastUpdateHP != None:
-                    intervalHP = (datetime.now()-self.lastUpdateHP).total_seconds()
+            
+            # TODO: Preparser la config mode standard
+            fields = Parameters["Mode4"].split(';')
+            nbFields = 0
+            firstField = 0
+            for f in fields:
+                if f.strip() != "":
+                    nbFields += 1
+                    continue
+                firstField += 1
+            if nbFields == 0:
+                Domoticz.Error("Standard Mode Config is empty")
+            elif nbFields == 1:
+                vals = [0]
+                vals[0] = GetNumericValue(fields[firstField], data)
+                instant = self.computeInstant(self.lastValues[0], vals[0])
+                if instant != None:
+                    UpdateDevice("Total", 0, str(vals[0]) + ";" + str(int(instant)))
                 else:
                     CreateDeviceIfNeeded("Total")
-                instantHP=0
-                if intervalHP > 0:
-                    instantHP = (hp-self.lastHP)/intervalHP*3600
-                    UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
-                self.lastHP=hp
-                self.lastUpdateHP=datetime.now()
+                self.lastValues = vals
             else:
-                Domoticz.Error("Unsupported NGTF: "+data["NGTF"])
+                sVal=""
+                vals = [0,0,0,0]
+                i = 0
+                for f in fields:
+                    if f.strip() != "":
+                        vals[i] = int(GetNumericValue(f, data))
+                        sVal += str(vals[i])
+                    else:
+                        sVal += "0"
+                    i+=1
+                    sVal += ";"
+                while i<4:
+                    sVal += "0;"
+                    i+=1
+                if self.lastValues != None:
+                    sVal += str(int(self.computeInstant(self.lastValues[0]+self.lastValues[1],vals[0]+vals[1])))
+                    sVal += ";"
+                    sVal += str(int(self.computeInstant(self.lastValues[2]+self.lastValues[3],vals[2]+vals[3])))
+                    UpdateDevice("HP/HC", 0, sVal)
+                else:
+                    CreateDeviceIfNeeded("HP/HC")
+                    
+                self.lastValues = vals
+                self.lastUpdate = datetime.now()
         UpdateAdditionalDevices(data)
+
+    def computeInstant(self, oldValue, newValue):
+        if self.lastUpdate != None and oldValue != None:
+            interval = (datetime.now()-self.lastUpdate).total_seconds()
+            instant = (newValue-oldValue)/interval*3600
+            return instant
+        return None
 
     def onDisconnect(self, Connection):
         #LogMessage("onDisconnect called for connection '" + Connection.Name + "'.")
@@ -447,7 +443,7 @@ NameToUnit = {
 
 def CreateDeviceIfNeeded(Name):
     if not Name in NameToUnit:
-        Domoticz.Error("Device name not defined")
+        Domoticz.Error("Device name '" + Name + "' not defined")
         return None
     i = NameToUnit[Name][0]
     if DEBUG_FRAME_ENABLED:
@@ -500,6 +496,7 @@ def CreateAdditionalDeviceIfNeeded(Name, i, PhysicsUnit):
     return dev
 
 def UpdateAdditionalDevices(data):
+    #TODO: prétraiter le paramètre additional field (Mode5) histoire de pas le refaire a chaque message...
     fields = Parameters["Mode5"].split(';')
     i=0
     for fieldsAndUnit in fields:
