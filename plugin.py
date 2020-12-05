@@ -20,10 +20,15 @@
                  Il est donc plus simple de proposer de configurer la signification des champs.<br/>
                  Il faut indiquer 4 champs séparés par des ; avec dans l'ordre, les compteurs suivants :<br/>
                  <pre>Conso Heures Pleines;Conso Heures Creuses;Prod Heures Pleines;Prod Heures Creuses</pre>
-                 Valeurs typiques:
+                 Valeurs typiques :
                  <ul>
-                     <li>EDF contrat BASE : "EASF01;;EAIT;</li>
-                     <li>EDF contrat HP/HC : "EASF02;EASF01;EAIT;</li>
+                     <li>Avec production :</li>
+                     <ul>
+                         <li>EDF contrat BASE : "EASF01;;EAIT;</li>
+                         <li>EDF contrat HP/HC : "EASF02;EASF01;EAIT;</li>
+                         <li>EDF contrat HC Week end : "EASF02;EASF01+EASF03;EAIT;</li>
+                     </ul>
+                     <li>Sans production : Laissez les 2 derniers champs vides</li>
                  </ul>
             </li>
             <li>Additional Fields: Des champs du message json à ajouter en custom sensor. Les champs doivent être séparés par un ; et suffixé de @ suivi de l'unité du champ (si l'unité est TEXT, le champ sera de type "Texte"). Les sommes de champs sont gérées (il suffit de séparer les noms des champs par un +). Exemple: "ADIR1@A;HCHP+HCHC@kWh;_ID_D2L@TEXT"</li>
@@ -222,7 +227,7 @@ class BasePlugin:
                 self.lastValues = [hp]
             else:
                 Domoticz.Error("Unsupported OPTARIF: "+data["OPTARIF"])
-            self.lastUpdate=datetime.now()
+            self.lastUpdate = datetime.now()
         elif data["_TYPE_TRAME"] == 'STANDARD':
             iinst1=0
             if "IRMS1" in data and data["IRMS1"].strip() != "":
@@ -277,21 +282,21 @@ class BasePlugin:
                     sVal += "0;"
                     i+=1
                 if self.lastValues != None:
-                    sVal += str(int(self.computeInstant(self.lastValues[0]+self.lastValues[1],vals[0]+vals[1])))
+                    sVal += str(int(self.computeInstant(self.lastValues[0]+self.lastValues[1], vals[0]+vals[1])))
                     sVal += ";"
-                    sVal += str(int(self.computeInstant(self.lastValues[2]+self.lastValues[3],vals[2]+vals[3])))
+                    sVal += str(int(self.computeInstant(self.lastValues[2]+self.lastValues[3], vals[2]+vals[3])))
                     UpdateDevice("HP/HC", 0, sVal)
                 else:
                     CreateDeviceIfNeeded("HP/HC")
                     
                 self.lastValues = vals
-                self.lastUpdate = datetime.now()
+            self.lastUpdate = datetime.now()
         UpdateAdditionalDevices(data)
 
     def computeInstant(self, oldValue, newValue):
         if self.lastUpdate != None and oldValue != None:
-            interval = (datetime.now()-self.lastUpdate).total_seconds()
-            instant = (newValue-oldValue)/interval*3600
+            interval = (datetime.now() - self.lastUpdate).total_seconds()
+            instant = (newValue - oldValue) / interval * 3600
             return instant
         return None
 
