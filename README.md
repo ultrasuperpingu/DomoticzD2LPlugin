@@ -3,7 +3,7 @@ Domoticz Plugin For Eesmart D2L Module For Linky
 
 This plugin allows to retrieve information from the french Linky electricity meter in Domoticz.
 
-Ce plugin permet la remontée des informations TIC de Linky vers Domoticz via le module D2L de Eesmart, connecté localement au serveur Domoticz. Pour le moment, le module ne fonctionne qu'en mode historique pour des contrats Base et HP/HC.
+Ce plugin permet la remontée des informations TIC de Linky vers Domoticz via le module D2L de Eesmart, connecté localement au serveur Domoticz. Le plugin fonctionne en mode TIC  historique et standard pour des contrats Base et HP/HC.
 
 ## Installation
 Requis : Testé uniquement sur Domoticz version 2020.2, Python 3 doit être installé
