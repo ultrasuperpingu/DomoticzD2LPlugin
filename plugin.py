@@ -37,7 +37,7 @@
         <h3>Dispositifs créés</h3>
         <ul style="list-style-type:square">
             <li>Intensité : Monophasé: une intensité (IINST), Triphasé: 3 intensités combiné en un dispositif (IINST1, IINST2, IINST3)</li>
-            <li>Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou (IINST1+IINST2+IINST3)/(3*ISOUSC)</li>
+            <li>Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC ou max(IINST1,IINST2,IINST3)/ISOUSC</li>
             <li>En fonction du contrat :</li>
             <ul>
                 <li>Contrat BASE :</li>
@@ -201,7 +201,7 @@ class BasePlugin:
             if self.triphase or iinst2 > 0 or iinst3 > 0:
                 self.triphase=True
                 UpdateDevice("Intensité (triphasé)", 0, str(iinst1)+";"+str(iinst2)+";"+str(iinst3))
-                UpdateDevice("Charge Electrique", 0, str(round((iinst1+iinst2+iinst3)/3/isousc*100)))
+                UpdateDevice("Charge Electrique", 0, str(round(max(iinst1,iinst2,iinst3)/isousc*100)))
             else:
                 UpdateDevice("Intensité", 0, str(iinst1))
                 UpdateDevice("Charge Electrique", 0, str(round(iinst1/isousc*100)))
