@@ -7,12 +7,14 @@ Ce plugin permet la remontée des informations TIC de Linky vers Domoticz via le
 
 ## Installation
 Requis : Testé uniquement sur Domoticz version 2020.2, Python 3 doit être installé
-
+Pour récupérer la version de développement :
 * En ligne de commande aller dans le répertoire plugin de Domoticz (domoticz/plugins)
 * Lancer la commande: ```git clone https://github.com/ultrasuperpingu/DomoticzD2LPlugin.git```
 * Redémarrer le service Domoticz en lancant la commande ```sudo service domoticz restart```
 
-Vous pouvez aussi simplement copier le fichier plugin.py dans le répertoire domoticz/plugins/{NomDeRepertoireDeNotreChoix} et redémarrer domoticz
+Vous pouvez aussi simplement copier le fichier plugin.py dans le répertoire domoticz/plugins/{NomDeRepertoireDeNotreChoix} et redémarrer domoticz.
+
+Pour récupérer une release, télécharger la version et décompresser l'archive dans le répertoire domoticz/plugins/{NomDeRepertoireDeNotreChoix} et redémarrer domoticz.
 
 ## Mise à Jour
 
@@ -22,7 +24,7 @@ Pour mettre à jour le plugin :
 * Lancer la commande: ```git pull```
 * Redémarrer le service Domoticz en lancant la commande ```sudo service domoticz restart```
 
-Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire domoticz/plugins/{NomDeRepertoireDeVotreChoix} et redémarrer domoticz
+Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire domoticz/plugins/{NomDeRepertoireDeVotreChoix} et redémarrer domoticz.
 
 ## Configuration
 | Field | Information|
