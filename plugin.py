@@ -83,16 +83,17 @@ import os
 # Faire attention à ce que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
 DEBUG_FRAME_ENABLED=False
 
+# TODO: supprimer la classe (passer en tout fonction + variable globale)
 class BasePlugin:
     enabled = False
     httpServerConn = None
     httpServerConns = {}
-    key=None
-    IV=None
-    lastUpdate=None
-    lastIdD2L=None
-    incompleteMessage=None
-    triphase=False
+    key = None
+    IV = None
+    lastUpdate = None
+    lastIdD2L = None
+    incompleteMessage = None
+    triphase = False
     lastValues = None
     TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE = 0x1 #non documenté
     TYPE_COMMANDE_V3_PUSH_JSON = 0x3
@@ -131,10 +132,18 @@ class BasePlugin:
                 Parameters["Mode5"] = f[2]
                 data = json.loads(f[0])
                 self.lastValues = None
+                self.lastUpdate = None
                 self.processJson(data)
                 self.processJson(data) #second time to really update device 
             Parameters["Mode4"] = savedConfigStandard
             Parameters["Mode5"] = savedAdditionalFields
+
+        self.lastValues = None
+        self.lastUpdate = None
+        self.lastIdD2L = None
+        self.triphase = False
+        self.incompleteMessage = None
+        adLastValues = {}
 
     def onConnect(self, Connection, Status, Description):
         if (Status == 0):
@@ -211,15 +220,15 @@ class BasePlugin:
                 hc=int(data["HCHC"])
                 instantHP = None
                 instantHC = None
-                if self.lastValues != None:
+                if self.lastValues != None and self.lastUpdate != None:
                     instantHP = self.computeInstant(self.lastValues[0], hp)
-                    instantHC = self.computeInstant(self.lastValues[1], hp)
+                    instantHC = self.computeInstant(self.lastValues[1], hc)
                     UpdateDevice(Name="HP/HC", nValue=0, sValue=str(hp)+";"+str(hc)+";0;0;"+str(round(instantHC+instantHP))+";0")
                 self.lastValues = [hp, hc]
             elif data["OPTARIF"] == "BASE":
                 hp=int(data["BASE"])
                 instantHP = None
-                if self.lastValues != None:
+                if self.lastValues != None and self.lastUpdate != None:
                     instantHP = self.computeInstant(self.lastValues[0], hp)
                     UpdateDevice(Name="Total", nValue=0, sValue=str(round(instantHP))+";"+str(hp))
                 else:
@@ -227,7 +236,6 @@ class BasePlugin:
                 self.lastValues = [hp]
             else:
                 Domoticz.Error("Unsupported OPTARIF: "+data["OPTARIF"])
-            self.lastUpdate = datetime.now()
         elif data["_TYPE_TRAME"] == 'STANDARD':
             iinst1=0
             if "IRMS1" in data and data["IRMS1"].strip() != "":
@@ -262,7 +270,7 @@ class BasePlugin:
                 vals[0] = GetNumericValue(fields[firstField], data)
                 instant = self.computeInstant(self.lastValues[0], vals[0])
                 if instant != None:
-                    UpdateDevice("Total", 0, str(vals[0]) + ";" + str(int(instant)))
+                    UpdateDevice("Total", 0, str(int(instant) + ";" + str(vals[0])))
                 else:
                     CreateDeviceIfNeeded("Total")
                 self.lastValues = vals
@@ -281,7 +289,7 @@ class BasePlugin:
                 while i<4:
                     sVal += "0;"
                     i+=1
-                if self.lastValues != None:
+                if self.lastValues != None and self.lastUpdate != None:
                     sVal += str(int(self.computeInstant(self.lastValues[0]+self.lastValues[1], vals[0]+vals[1])))
                     sVal += ";"
                     sVal += str(int(self.computeInstant(self.lastValues[2]+self.lastValues[3], vals[2]+vals[3])))
@@ -290,8 +298,8 @@ class BasePlugin:
                     CreateDeviceIfNeeded("HP/HC")
                     
                 self.lastValues = vals
-            self.lastUpdate = datetime.now()
         UpdateAdditionalDevices(data)
+        self.lastUpdate = datetime.now()
 
     def computeInstant(self, oldValue, newValue):
         if self.lastUpdate != None and oldValue != None:
@@ -495,12 +503,15 @@ def CreateAdditionalDeviceIfNeeded(Name, i, PhysicsUnit):
             DName=Name
         if PhysicsUnit == "TEXT":
             dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Text")
-        else: # TODO: gérer proprement kWh
+        elif PhysicsUnit == "kWh":
+            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="kWh")
+        else:
             dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Custom", Options={'Custom':'1;' + PhysicsUnit})
         dev.Create()
     return dev
 
 def UpdateAdditionalDevices(data):
+    global adLastValues
     #TODO: prétraiter le paramètre additional field (Mode5) histoire de pas le refaire a chaque message...
     fields = Parameters["Mode5"].split(';')
     i=0
@@ -509,7 +520,7 @@ def UpdateAdditionalDevices(data):
             continue
         temp = fieldsAndUnit.split('@')
         if len(temp) != 2:
-            Domoticz.Error("Error parsing Additional Fields " + fieldsAndUnit)
+            Domoticz.Error("Error parsing Additional Fields " + fieldsAndUnit+". Format is 'FieldName@Unit'")
             continue
         field = temp[0]
         unit = temp[1]
@@ -518,13 +529,23 @@ def UpdateAdditionalDevices(data):
                 Domoticz.Error("Field " + field + " does not exists in json")
                 continue
         dev = CreateAdditionalDeviceIfNeeded(field, 20 + i, unit)
+        if not dev.Unit in adLastValues:
+            adLastValues[dev.Unit] = None
         if unit == "TEXT":
             dev.Update(0, data[field])
-        else: # TODO: gérer proprement kWh
+        elif unit == "kWh":
+            val = GetNumericValue(field, data)
+            if adLastValues[dev.Unit] != None:
+                instant = _plugin.computeInstant(adLastValues[dev.Unit], val)
+                dev.Update(0, str(round(instant))+";"+str(int(val)))
+            adLastValues[dev.Unit] = val
+        else:
             val = GetNumericValue(field, data)
             dev.Update(0, str(val), Options={'Custom':'1;' + unit})
         i += 1
 
+global adLastValues
+adLastValues = {}
 global _plugin
 _plugin = BasePlugin()
 
