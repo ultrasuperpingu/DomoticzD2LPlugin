@@ -6,7 +6,8 @@ This plugin allows to retrieve information from the french Linky electricity met
 Ce plugin permet la remontée des informations TIC de Linky vers Domoticz via le module D2L de Eesmart, connecté localement au serveur Domoticz. Le plugin fonctionne en mode TIC  historique et standard pour des contrats Base et HP/HC. La gestion de la production d'énergie est possible en mode Standard (non testé).
 
 ## Installation
-Requis : Testé uniquement sur Domoticz version 2020.2, Python 3 doit être installé
+Requis : Testé uniquement sur Domoticz version 2020.2, Python 3 doit être installé.
+
 Pour récupérer la version de développement :
 * En ligne de commande aller dans le répertoire plugin de Domoticz (domoticz/plugins)
 * Lancer la commande: ```git clone https://github.com/ultrasuperpingu/DomoticzD2LPlugin.git```
