@@ -3,7 +3,7 @@ Domoticz Plugin For Eesmart D2L Module For Linky
 
 This plugin allows to retrieve information from the french Linky electricity meter in Domoticz.
 
-Ce plugin permet la remontée des informations TIC de Linky vers Domoticz via le module D2L de Eesmart, connecté localement au serveur Domoticz. Le plugin fonctionne en mode TIC  historique et standard pour des contrats Base et HP/HC.
+Ce plugin permet la remontée des informations TIC de Linky vers Domoticz via le module D2L de Eesmart, connecté localement au serveur Domoticz. Le plugin fonctionne en mode TIC  historique et standard pour des contrats Base et HP/HC. La gestion de la production d'énergie est possible en mode Standard (non testé).
 
 ## Installation
 Requis : Testé uniquement sur Domoticz version 2020.2, Python 3 doit être installé
@@ -44,11 +44,11 @@ Du coté du module, suivez la procédure de la documentation du module pour le f
 
 ## Utilisation
 Dès que le plugin recevera les premières infos, il créera les équipements nécessaires (les termes en majuscules désignent les champs TIC (voir la spécification Enedis)) :
- * Intensité instantanée: Monophasé: une intensité (IINST), Triphasé: 3 intensités combinées en un dispositif (IINST1, IINST2, IINST3)</li>
- * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC en monophasé ou (IINST1+IINST2+IINST3)/(3*ISOUSC) en triphasé)
+ * Intensité instantanée: Monophasé: une intensité (IINST), Triphasé: 3 intensités combinées en un dispositif (IINST1, IINST2, IINST3), Standard Monophasé : une intensité (IRMS1), Triphasé: 3 intensités combinées en un dispositif (IRMS1, IRMS2, IRMS3)</li>
+ * Charge électrique : Pourcentage de charge du compteur (IINST/ISOUSC en monophasé ou max(IINST1,IINST2,IINST3)/ISOUSC en triphasé, standard: SINSTS/PCOUP)
  * En fonction du contrat :
-   - Contrat Base : un compteur kWh (BASE)
-   - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC (HCHP et HCHC)
+   - Contrat Base : un compteur kWh (historique : BASE, standard: selon config)
+   - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC (HCHP et HCHC, standard: selon config (gestion production possible))
    
 Spécification Enedis : https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf
 
