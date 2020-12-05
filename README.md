@@ -40,8 +40,6 @@ Dans la partie Matériel de Domoticz:
  * Renseigner les paramètres
  * Ajouter le matériel
  
-Les champs App Key, IV et Port ne peuvent être modifiés dynamiquement (en sélectionnant le matériel et en faisant Modifier). Pour prendre en compte la modification, vous devez redémarrer Domoticz (```sudo service domoticz restart```).
-
 Du coté du module, suivez la procédure de la documentation du module pour le faire pointer vers le serveur domoticz et vers le port que vous avez configuré dans le plugin.
 
 ## Utilisation
