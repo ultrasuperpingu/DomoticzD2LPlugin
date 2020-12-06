@@ -58,6 +58,7 @@ Dès que le plugin recevera les premières infos, il créera les équipements n�
    - Autre type : (exemple PAPP@VA) Un dispositif de type Custom Sensor avec le type comme unité
 
 La récupération des valeurs de production d'énergie n'est possible que dans le mode Standard. Pour passer Linky du mode Historique vers le mode Standard (et inversement), il faut effectuer une demande à votre fournisseur qui la tranmettra à Enedis.
+
 Spécification Enedis : https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf
 
 ## Remonter un problème
