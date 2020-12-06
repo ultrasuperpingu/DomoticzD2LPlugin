@@ -52,6 +52,10 @@ Dès que le plugin recevera les premières infos, il créera les équipements n�
  * En fonction du contrat :
    - Contrat Base : un compteur kWh (historique : BASE, standard: selon config)
    - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC (HCHP et HCHC, standard: selon config (gestion production possible))
+ * Un dispositif par champ présent dans le paramètre Additional Fields (les champs sont séparés par un ";", le type est indiqué en suffixant le nom du champs par @Type):
+   - Type = TEXT (exemple MSG1@TEXT): Un dispositif de type Text
+   - Type = kWh (exemple BBRHPJR@kWh): Un dispositif de type kWh (compteur d'enegie Domoticz). La puissance instantanée est calculée par le plugin
+   - Autre type : (exemple PAPP@VA) Un dispositif de type Custom Sensor avec le type comme unité
    
 Spécification Enedis : https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf
 
