@@ -33,7 +33,7 @@ Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire d
 | Port  | Port IP à configurer dans le module (Valeur par défaut : 8008) . Quand vous configurez le module, c'est ce port que vous devez renseigner et non le port de l'interface de Domoticz (qui est par défaut 8080). L'adresse IP à configurer dans le module est celle du serveur Domoticz. |
 | App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal) |
 | IV | (Lire i.v. et non 4) Le vecteur d'initialisation (Initialization Vector) AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal) |
-| Standard Mode Config| Correspondance champs JSON->signification pour le mode standard. En mode standard, il semble que la valeur des champs varie d'un fournisseur à un autre. Il est donc plus simple de proposer de configurer la signification des champs. Il faut indiquer 4 champs séparés par des ; avec dans l'ordre, les compteurs suivants :<br/>Conso Heures Pleines;Conso Heures Creuses;Prod Heures Pleines;Prod Heures Creuses<br/><br/>Valeurs typiques :<br/><br/><ul><li>Avec production :</li><ul><li>EDF contrat BASE : "EASF01;;EAIT;</li><li>EDF contrat HP/HC : "EASF02;EASF01;EAIT;</li> <li>EDF contrat HC Week end : "EASF02;EASF01+EASF03;EAIT;</li></ul><li>Sans production : Laissez les 2 derniers champs vides</li></ul> |
+| Standard Mode Config| Correspondance champs JSON->signification pour le mode standard. En mode standard, il semble que la valeur des champs varie d'un fournisseur à un autre. Il est donc plus simple de proposer de configurer la signification des champs. Il faut indiquer 4 champs séparés par des ; avec dans l'ordre, les compteurs suivants :<br/>Conso Heures Pleines;Conso Heures Creuses;Prod Heures Pleines;Prod Heures Creuses<br/><br/>Valeurs typiques :<br/><ul><li>Avec production :</li><ul><li>EDF contrat BASE : "EASF01;;EAIT;</li><li>EDF contrat HP/HC : "EASF02;EASF01;EAIT;</li> <li>EDF contrat HC Week end : "EASF02;EASF01+EASF03;EAIT;</li></ul><li>Sans production : Laissez les 2 derniers champs vides</li></ul> |
 | Additional Fields | Des champs du message json à ajouter en custom sensor. Les champs doivent être séparés par un ; et suffixé de @ suivi de l'unité du champ (si l'unité est TEXT, le champ sera de type "Texte", si l'unité est kWh, le champs sera traité comme un compteur Domoticz). Les sommes de champs sont gérées (il suffit de séparer les noms des champs par un +).<br/>Exemple: "ADIR1@A;HCHP+HCHC@kWh;ADIR1@TEXT" |
 | Debug | All/Communication/None. Communication permet de ne loguer que les données envoyées par le module |
 
@@ -56,7 +56,8 @@ Dès que le plugin recevera les premières infos, il créera les équipements n�
    - Type = TEXT (exemple MSG1@TEXT): Un dispositif de type Text
    - Type = kWh (exemple BBRHPJR@kWh): Un dispositif de type kWh (compteur d'enegie Domoticz). La puissance instantanée est calculée par le plugin
    - Autre type : (exemple PAPP@VA) Un dispositif de type Custom Sensor avec le type comme unité
-   
+
+La récupération des valeurs de production d'énergie n'est possible que dans le mode Standard. Pour passer Linky du mode Historique vers le mode Standard (et inversement), il faut effectuer une demande à votre fournisseur qui la tranmettra à Enedis.
 Spécification Enedis : https://www.enedis.fr/sites/default/files/Enedis-NOI-CPT_54E.pdf
 
 ## Remonter un problème
