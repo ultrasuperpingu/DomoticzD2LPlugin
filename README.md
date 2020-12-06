@@ -30,7 +30,7 @@ Vous pouvez également mettre à jour le fichier plugin.py dans le répertoire d
 ## Configuration
 | Field | Information|
 | ----- | ---------- |
-| Port  | Port IP à configurer dans le module (l'adresse IP étant celle du serveur Domoticz) |
+| Port  | Port IP à configurer dans le module (Valeur par défaut : 8008) . Quand vous configurez le module, c'est ce port que vous devez renseigner et pas le port de l'interface de Domoticz (généralement 8080). L'adresse IP à configurer dans le module est celle du serveur Domoticz. |
 | App Key | La clef applicative correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal) |
 | IV | (Lire i.v. et non 4) Le vecteur d'initialisation (Initialization Vector) AES correspondant à votre module nécessaire au déchiffrement des trames du module (32 caractères, nombre hexadécimal) |
 | Standard Mode Config| Correspondance champs JSON->signification pour le mode standard. En mode standard, il semble que la valeur des champs varie d'un fournisseur à un autre. Il est donc plus simple de proposer de configurer la signification des champs. Il faut indiquer 4 champs séparés par des ; avec dans l'ordre, les compteurs suivants :<br/>Conso Heures Pleines;Conso Heures Creuses;Prod Heures Pleines;Prod Heures Creuses<br/><br/>Valeurs typiques :<br/><br/><ul><li>Avec production :</li><ul><li>EDF contrat BASE : "EASF01;;EAIT;</li><li>EDF contrat HP/HC : "EASF02;EASF01;EAIT;</li> <li>EDF contrat HC Week end : "EASF02;EASF01+EASF03;EAIT;</li></ul><li>Sans production : Laissez les 2 derniers champs vides</li></ul> |
