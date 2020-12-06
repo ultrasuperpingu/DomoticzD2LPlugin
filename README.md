@@ -54,7 +54,7 @@ Dès que le plugin recevera les premières infos, il créera les équipements n�
    - Contrat HP/HC : un compteur de type P1 Smart Sensor regroupant les compteurs HP et HC (HCHP et HCHC, standard: selon config (gestion production possible))
  * Un dispositif par champ présent dans le paramètre Additional Fields (les champs sont séparés par un ";", le type est indiqué en suffixant le nom du champs par @Type):
    - Type = TEXT (exemple MSG1@TEXT): Un dispositif de type Text
-   - Type = kWh (exemple BBRHPJR@kWh): Un dispositif de type kWh (compteur d'enegie Domoticz). La puissance instantanée est calculée par le plugin
+   - Type = kWh (exemple BBRHPJR@kWh): Un dispositif de type kWh (compteur d'énergie Domoticz). La puissance instantanée est calculée par le plugin
    - Autre type : (exemple PAPP@VA) Un dispositif de type Custom Sensor avec le type comme unité
 
 La récupération des valeurs de production d'énergie n'est possible que dans le mode Standard. Pour passer Linky du mode Historique vers le mode Standard (et inversement), il faut effectuer une demande à votre fournisseur qui la tranmettra à Enedis.
