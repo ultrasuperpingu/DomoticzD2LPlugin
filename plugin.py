@@ -72,7 +72,7 @@ import Domoticz
 from binascii import hexlify, unhexlify
 from Crypto.Cipher import AES
 import base64
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import secrets
 import json
 import re
@@ -134,6 +134,7 @@ class BasePlugin:
                 self.lastValues = None
                 self.lastUpdate = None
                 self.processJson(data)
+                self.lastUpdate -= timedelta(seconds=60)
                 self.processJson(data) #second time to really update device 
             Parameters["Mode4"] = savedConfigStandard
             Parameters["Mode5"] = savedAdditionalFields
@@ -257,20 +258,21 @@ class BasePlugin:
             # TODO: Preparser la config mode standard
             fields = Parameters["Mode4"].split(';')
             nbFields = 0
-            firstField = 0
+            firstField = None
             for f in fields:
                 if f.strip() != "":
                     nbFields += 1
+                    firstField = f
                     continue
-                firstField += 1
             if nbFields == 0:
                 Domoticz.Error("Standard Mode Config is empty")
             elif nbFields == 1:
                 vals = [0]
-                vals[0] = GetNumericValue(fields[firstField], data)
-                instant = self.computeInstant(self.lastValues[0], vals[0])
-                if instant != None:
-                    UpdateDevice("Total", 0, str(int(instant) + ";" + str(vals[0])))
+                vals[0] = GetNumericValue(firstField, data)
+                instant = None
+                if self.lastValues != None and self.lastUpdate != None:
+                    instant = self.computeInstant(self.lastValues[0], vals[0])
+                    UpdateDevice("Total", 0, str(round(instant)) + ";" + str(int(vals[0])))
                 else:
                     CreateDeviceIfNeeded("Total")
                 self.lastValues = vals
@@ -488,7 +490,7 @@ def GetNumericValue(fieldsStr, data):
             except ValueError:
                 Domoticz.Error("Can't parse field " + f + " as numeric (value: " + data[f] + ")")
         else:
-            Domoticz.Error("Field " + f + " does not exists in json")
+            Domoticz.Error("Field '" + f + "' does not exists in json")
     return val
 
 def CreateAdditionalDeviceIfNeeded(Name, i, PhysicsUnit):
