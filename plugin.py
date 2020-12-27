@@ -7,7 +7,7 @@
 # Creates and listens on an HTTP socket. Update devices when message received from D2L
 #
 """
-<plugin key="D2LModule" name="Eesmart D2L ERL Module" author="ultrapingu" version="1.1.0">
+<plugin key="D2LModule" name="Eesmart D2L ERL Module" author="ultrapingu" version="1.2.0">
     <description>
         <h2>Eesmart D2L ERL Module</h2><br/>
         <h3>Paramètres</h3>
@@ -81,7 +81,7 @@ import os
 # Si DEBUG_FRAME_ENABLED==True, les trames du fichiers frame_examples.txt sont lues au démarrage du plugin (test regression). 
 # Les devices crés/mis à jour sont différents de ceux utilisé en prod afin de ne pas collecter des données de debug sur les dispositifs de prod dans la base domoticz.
 # Faire attention à ce que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
-DEBUG_FRAME_ENABLED=False
+DEBUG_FRAME_ENABLED=True
 
 # TODO: supprimer la classe (passer en tout fonction + variable globale)
 class BasePlugin:
@@ -120,6 +120,7 @@ class BasePlugin:
         #self.key=base64.b64decode(Parameters["Mode2"])
         self.IV=unhexlify(Parameters["Mode3"])
         #self.IV=base64.b64decode(Parameters["Mode3"])
+        CreateImagesIfNeeded()
 
         self.httpServerConn = Domoticz.Connection(Name="Server Connection", Transport="TCP/IP", Protocol="None", Port=Parameters["Port"])
         self.httpServerConn.Listen()
@@ -447,13 +448,27 @@ def GenerateHorlogeResponse(header):
 def GetHorloge():
     return int((datetime.now(timezone.utc)-datetime(2016, 1, 1, tzinfo=timezone.utc)).total_seconds())
 
+def CreateImagesIfNeeded():
+    if ("D2LModuleElecCurrent" not in Images):
+        LogMessage("Creating image D2LModuleElecCurrent")
+        Domoticz.Image('D2L-elec_current.zip').Create()
+    if ("D2LModuleElecLoad" not in Images):
+        LogMessage("Creating image D2LModuleElecLoad")
+        Domoticz.Image('D2L-elec_load.zip').Create()
+    if ("D2LModuleElecMeter" not in Images):
+        LogMessage("Creating image D2LModuleElecMeter")
+        Domoticz.Image('D2L-elec_meter.zip').Create()
+    if ("D2LModuleText" not in Images):
+        LogMessage("Creating image D2LModuleText")
+        Domoticz.Image('D2L-text.zip').Create()
+
 # Name -> (Unit, Type, Subtype)
 NameToUnit = {
-  "Intensité": (1, 243, 23),
-  "Intensité (triphasé)":(2, 89, 1),
-  "Charge Electrique":(3, 243, 6),
-  "HP/HC":(4, 250, 1),
-  "Total":(5, 243, 29),
+  "Intensité": (1, 243, 23, "D2LModuleElecCurrent"),
+  "Intensité (triphasé)":(2, 89, 1, "D2LModuleElecCurrent"),
+  "Charge Electrique":(3, 243, 6, "D2LModuleElecLoad"),
+  "HP/HC":(4, 250, 1, "D2LModuleElecMeter"),
+  "Total":(5, 243, 29, "D2LModuleElecMeter"),
 }
 
 def CreateDeviceIfNeeded(Name):
@@ -470,7 +485,7 @@ def CreateDeviceIfNeeded(Name):
             DName=Name+" - Debug"
         else:
             DName=Name
-        dev = Domoticz.Device(Name=DName, Unit=i, Type=NameToUnit[Name][1], Subtype=NameToUnit[Name][2])
+        dev = Domoticz.Device(Name=DName, Unit=i, Type=NameToUnit[Name][1], Subtype=NameToUnit[Name][2], Image=Images[NameToUnit[Name][3]].ID)
         dev.Create()
     return dev
 
@@ -504,11 +519,11 @@ def CreateAdditionalDeviceIfNeeded(Name, i, PhysicsUnit):
         else:
             DName=Name
         if PhysicsUnit == "TEXT":
-            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Text")
+            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Text", Image=Images["D2LModuleText"].ID)
         elif PhysicsUnit == "kWh":
-            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="kWh")
+            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="kWh", Image=Images["D2LModuleElecMeter"].ID)
         else:
-            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Custom", Options={'Custom':'1;' + PhysicsUnit})
+            dev = Domoticz.Device(Name=DName, Unit=i, TypeName="Custom", Options={'Custom':'1;' + PhysicsUnit}, Image=Images["D2LModuleElecMeter"].ID)
         dev.Create()
     return dev
 
