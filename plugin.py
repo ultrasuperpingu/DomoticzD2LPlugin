@@ -81,7 +81,7 @@ import os
 # Si DEBUG_FRAME_ENABLED==True, les trames du fichiers frame_examples.txt sont lues au démarrage du plugin (test regression). 
 # Les devices crés/mis à jour sont différents de ceux utilisé en prod afin de ne pas collecter des données de debug sur les dispositifs de prod dans la base domoticz.
 # Faire attention à ce que la ligne ci-dessous soit bien DEBUG_FRAME_ENABLED=False avant de commiter.
-DEBUG_FRAME_ENABLED=True
+DEBUG_FRAME_ENABLED=False
 
 # TODO: supprimer la classe (passer en tout fonction + variable globale)
 class BasePlugin:
