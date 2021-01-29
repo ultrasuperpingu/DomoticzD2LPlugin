@@ -98,6 +98,7 @@ class BasePlugin:
     TYPE_COMMANDE_V3_NEED_FIRMWARE_UPDATE = 0x1 #non documenté
     TYPE_COMMANDE_V3_PUSH_JSON = 0x3
     TYPE_COMMANDE_V3_GET_HORLOGE = 0x5
+    TYPE_COMMANDE_V3_NO_INTERNET = 0x7 #non documenté
 
     def __init__(self):
         return
@@ -197,8 +198,10 @@ class BasePlugin:
             return
         elif header.payloadType == self.TYPE_COMMANDE_V3_GET_HORLOGE:
             pass
+        elif header.payloadType == self.TYPE_COMMANDE_V3_NO_INTERNET:
+            pass
         else:
-            Domoticz.Error("Unknown payload type: "+header.payloadType+". payload="+str(Data[38:38+header.payloadSize]))
+            Domoticz.Error("Unknown payload type: "+str(header.payloadType)+". payload="+str(Data[38:38+header.payloadSize]))
         resp = GenerateHorlogeResponse(header)
         resp = self.cipher(resp)
         Connection.Send(resp)
