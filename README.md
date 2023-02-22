@@ -17,6 +17,8 @@ Vous pouvez aussi simplement copier le fichier plugin.py dans le répertoire dom
 
 Pour récupérer une release, télécharger la version et décompresser l'archive dans le répertoire domoticz/plugins/{NomDeRepertoireDeNotreChoix} et redémarrer domoticz.
 
+Si le plugin ne se charge pas et qu'une erreur dans les logs indiquant `ModuleNotFoundError: No module named 'Crypto'` apparait, il faut installer le package python correspondant (je pense ```pip uninstall pycrypto``` et/ou ```pip uninstall pycryptodomi```.
+
 ## Mise à Jour
 
 Pour mettre à jour le plugin :
